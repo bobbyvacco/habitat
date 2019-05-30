@@ -830,6 +830,13 @@ impl MemberList {
     pub fn contains_member_mlr(&self, member_id: &str) -> bool {
         self.read_entries().contains_key(member_id)
     }
+
+    pub fn rumor_keys(&self) -> Vec<RumorKey> {
+        self.read_entries()
+            .values()
+            .map(|member_list::Entry { member, .. }| RumorKey::from(member))
+            .collect()
+    }
 }
 
 /// This proxy wraps a MemberList so that we can customize its serialization logic.

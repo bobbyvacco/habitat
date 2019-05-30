@@ -9,7 +9,6 @@
 pub mod dat_file;
 pub mod departure;
 pub mod election;
-pub mod heat;
 pub mod service;
 pub mod service_config;
 pub mod service_file;
@@ -450,20 +449,34 @@ impl<T> RumorStore<T> where T: Rumor
     fn increment_update_counter(&self) { self.update_counter.fetch_add(1, Ordering::Relaxed); }
 
     /// Find rumors in our rumor store that have expired.
-    fn expired(&self, expiration_date: DateTime<Utc>) -> Vec<T> {
+    fn partitioned_rumors(&self, expiration_date: DateTime<Utc>) -> (Vec<T>, Vec<T>) {
         self.read_entries()
             .values()
             .flat_map(HashMap::values)
-            .filter(|&rumor| rumor.expiration().0 < expiration_date)
             .cloned()
-            .collect()
+            .partition(|rumor| rumor.expiration().0 < expiration_date)
+    }
+
+    pub fn expired_rumors(&self, expiration_date: DateTime<Utc>) -> Vec<T> {
+        self.partitioned_rumors(expiration_date).0
+    }
+
+    pub fn live_rumors(&self, expiration_date: DateTime<Utc>) -> Vec<T> {
+        self.partitioned_rumors(expiration_date).1
     }
 
     /// Remove all rumors that have expired from our rumor store.
     pub fn purge_expired(&self, expiration_date: DateTime<Utc>) {
-        self.expired(expiration_date)
+        self.expired_rumors(expiration_date)
             .iter()
             .for_each(|r| self.remove(r.key(), r.id()))
+    }
+
+    pub fn rumor_keys(&self) -> Vec<RumorKey> {
+        self.live_rumors(Utc::now())
+            .iter()
+            .map(RumorKey::from)
+            .collect()
     }
 }
 
