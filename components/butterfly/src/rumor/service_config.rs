@@ -9,6 +9,7 @@ use crate::{error::{Error,
                                   Rumor as ProtoRumor},
                        FromProto},
             rumor::{Rumor,
+                    RumorExpiration,
                     RumorPayload,
                     RumorType}};
 use habitat_core::{crypto::{keys::box_key_pair::WrappedSealedBox,
@@ -29,6 +30,7 @@ pub struct ServiceConfig {
     pub incarnation:   u64,
     pub encrypted:     bool,
     pub config:        Vec<u8>, // TODO: make this a String
+    pub expiration:    RumorExpiration,
 }
 
 impl fmt::Display for ServiceConfig {
@@ -67,7 +69,8 @@ impl ServiceConfig {
                         service_group,
                         incarnation: 0,
                         encrypted: false,
-                        config }
+                        config,
+                        expiration: RumorExpiration::forever() }
     }
 
     pub fn encrypt(&mut self, user_pair: &BoxKeyPair, service_pair: &BoxKeyPair) -> Result<()> {
@@ -116,26 +119,28 @@ impl FromProto<ProtoRumor> for ServiceConfig {
             RumorPayload::ServiceConfig(payload) => payload,
             _ => panic!("from-bytes service-config"),
         };
-        Ok(ServiceConfig { from_id:       rumor.from_id
-                                               .ok_or(Error::ProtocolMismatch("from-id"))?,
-                           service_group:
-                               payload.service_group
-                                      .ok_or(Error::ProtocolMismatch("service-group"))
-                                      .and_then(|s| {
-                                          ServiceGroup::from_str(&s).map_err(Error::from)
-                                      })?,
-                           incarnation:   payload.incarnation.unwrap_or(0),
-                           encrypted:     payload.encrypted.unwrap_or(false),
-                           config:        payload.config.unwrap_or_default(), })
+        let expiration = RumorExpiration::from_proto(payload.expiration)?;
+        Ok(ServiceConfig { from_id: rumor.from_id.ok_or(Error::ProtocolMismatch("from-id"))?,
+                           service_group: payload.service_group
+                                                 .ok_or(Error::ProtocolMismatch("service-group"))
+                                                 .and_then(|s| {
+                                                     ServiceGroup::from_str(&s).map_err(Error::from)
+                                                 })?,
+                           incarnation: payload.incarnation.unwrap_or(0),
+                           encrypted: payload.encrypted.unwrap_or(false),
+                           config: payload.config.unwrap_or_default(),
+                           expiration })
     }
 }
 
 impl From<ServiceConfig> for newscast::ServiceConfig {
     fn from(value: ServiceConfig) -> Self {
+        let exp = value.expiration.for_proto();
         newscast::ServiceConfig { service_group: Some(value.service_group.to_string()),
                                   incarnation:   Some(value.incarnation),
                                   encrypted:     Some(value.encrypted),
-                                  config:        Some(value.config), }
+                                  config:        Some(value.config),
+                                  expiration:    Some(exp), }
     }
 }
 
@@ -156,6 +161,8 @@ impl Rumor for ServiceConfig {
     fn id(&self) -> &str { "service_config" }
 
     fn key(&self) -> &str { &self.service_group }
+
+    fn expiration(&self) -> &RumorExpiration { &self.expiration }
 }
 
 #[cfg(test)]

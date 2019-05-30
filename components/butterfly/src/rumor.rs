@@ -14,25 +14,6 @@ pub mod service;
 pub mod service_config;
 pub mod service_file;
 
-use std::{collections::{hash_map::Entry,
-                        HashMap},
-          default::Default,
-          ops::Deref,
-          result,
-          sync::{atomic::{AtomicUsize,
-                          Ordering},
-                 Arc,
-                 RwLock}};
-
-use bytes::BytesMut;
-use prometheus::IntCounterVec;
-use prost::Message as ProstMessage;
-use serde::{ser::{SerializeMap,
-                  SerializeSeq,
-                  SerializeStruct},
-            Serialize,
-            Serializer};
-
 pub use self::{departure::Departure,
                election::{Election,
                           ElectionUpdate},
@@ -47,12 +28,61 @@ use crate::{error::{Error,
             member::Membership,
             protocol::{FromProto,
                        Message}};
+use bytes::BytesMut;
+use chrono::{offset::Utc,
+             DateTime,
+             Duration};
+use prometheus::IntCounterVec;
+use prost::Message as ProstMessage;
+use serde::{ser::{SerializeMap,
+                  SerializeSeq,
+                  SerializeStruct},
+            Serialize,
+            Serializer};
+use std::{collections::{hash_map::Entry,
+                        HashMap},
+          default::Default,
+          ops::Deref,
+          result,
+          sync::{atomic::{AtomicUsize,
+                          Ordering},
+                 Arc,
+                 RwLock}};
 
 lazy_static! {
     static ref IGNORED_RUMOR_COUNT: IntCounterVec =
         register_int_counter_vec!("hab_butterfly_ignored_rumor_total",
                                   "How many rumors we ignore",
                                   &["rumor"]).unwrap();
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct RumorExpiration(DateTime<Utc>);
+
+impl RumorExpiration {
+    // Some rumors we don't want to ever have naturally age out. We only want them
+    // to expire when there is a new rumor to take their place (e.g. a new election). When that
+    // type of trigger event happens, we will manually set the expiration date to a short time in
+    // the future. Until then, though, we don't want this rumor to go away on its own, so we set
+    // the expiration date to 100 years in the future, which is effectively forever for our
+    // purposes. This is far more convenient and natural to work with than having to deal with
+    // Option<DateTime<Utc>>.
+    pub fn forever() -> Self { RumorExpiration(Utc::now() + Duration::weeks(5200)) }
+
+    // This is more of a generic expiration date that we can apply whenever we have a rumor we
+    // don't need to keep around any more.
+    pub fn soon() -> Self { RumorExpiration(Utc::now() + Duration::hours(1)) }
+
+    pub fn for_proto(&self) -> String { self.0.to_rfc3339() }
+
+    pub fn from_proto(expiration: Option<String>) -> Result<Self> {
+        if expiration.is_none() {
+            return Ok(RumorExpiration::soon());
+        }
+
+        let exp = DateTime::parse_from_rfc3339(&expiration.unwrap())?;
+        Ok(RumorExpiration(exp.with_timezone(&Utc)))
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -113,6 +143,7 @@ pub trait Rumor: Message<ProtoRumor> + Sized {
     fn key(&self) -> &str;
     fn id(&self) -> &str;
     fn merge(&mut self, other: Self) -> bool;
+    fn expiration(&self) -> &RumorExpiration;
 }
 
 impl<'a, T: Rumor> From<&'a T> for RumorKey {

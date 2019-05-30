@@ -9,6 +9,7 @@ use crate::{error::{Error,
                                   Rumor as ProtoRumor},
                        FromProto},
             rumor::{Rumor,
+                    RumorExpiration,
                     RumorPayload,
                     RumorType}};
 use habitat_core::{crypto::{keys::box_key_pair::WrappedSealedBox,
@@ -28,6 +29,7 @@ pub struct ServiceFile {
     pub encrypted:     bool,
     pub filename:      String,
     pub body:          Vec<u8>, // TODO: make this a String
+    pub expiration:    RumorExpiration,
 }
 
 impl fmt::Display for ServiceFile {
@@ -73,7 +75,8 @@ impl ServiceFile {
                       incarnation: 0,
                       encrypted: false,
                       filename: filename.into(),
-                      body }
+                      body,
+                      expiration: RumorExpiration::forever() }
     }
 
     /// Encrypt the contents of the service file
@@ -110,26 +113,30 @@ impl FromProto<ProtoRumor> for ServiceFile {
             RumorPayload::ServiceFile(payload) => payload,
             _ => panic!("from-bytes service-config"),
         };
-        Ok(ServiceFile { from_id:       rumor.from_id.ok_or(Error::ProtocolMismatch("from-id"))?,
+        let expiration = RumorExpiration::from_proto(payload.expiration)?;
+        Ok(ServiceFile { from_id: rumor.from_id.ok_or(Error::ProtocolMismatch("from-id"))?,
                          service_group:
                              payload.service_group
                                     .ok_or(Error::ProtocolMismatch("service-group"))
                                     .and_then(|s| ServiceGroup::from_str(&s).map_err(Error::from))?,
-                         incarnation:   payload.incarnation.unwrap_or(0),
-                         encrypted:     payload.encrypted.unwrap_or(false),
-                         filename:      payload.filename
-                                               .ok_or(Error::ProtocolMismatch("filename"))?,
-                         body:          payload.body.unwrap_or_default(), })
+                         incarnation: payload.incarnation.unwrap_or(0),
+                         encrypted: payload.encrypted.unwrap_or(false),
+                         filename: payload.filename
+                                          .ok_or(Error::ProtocolMismatch("filename"))?,
+                         body: payload.body.unwrap_or_default(),
+                         expiration })
     }
 }
 
 impl From<ServiceFile> for newscast::ServiceFile {
     fn from(value: ServiceFile) -> Self {
+        let exp = value.expiration.for_proto();
         newscast::ServiceFile { service_group: Some(value.service_group.to_string()),
                                 incarnation:   Some(value.incarnation),
                                 encrypted:     Some(value.encrypted),
                                 filename:      Some(value.filename),
-                                body:          Some(value.body), }
+                                body:          Some(value.body),
+                                expiration:    Some(exp), }
     }
 }
 
@@ -150,6 +157,8 @@ impl Rumor for ServiceFile {
     fn id(&self) -> &str { &self.filename }
 
     fn key(&self) -> &str { &self.service_group }
+
+    fn expiration(&self) -> &RumorExpiration { &self.expiration }
 }
 
 #[cfg(test)]

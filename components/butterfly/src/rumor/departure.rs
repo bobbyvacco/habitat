@@ -11,6 +11,7 @@ use crate::{error::{Error,
                                   Rumor as ProtoRumor},
                        FromProto},
             rumor::{Rumor,
+                    RumorExpiration,
                     RumorPayload,
                     RumorType}};
 use std::{cmp::Ordering,
@@ -18,7 +19,8 @@ use std::{cmp::Ordering,
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Departure {
-    pub member_id: String,
+    pub member_id:  String,
+    pub expiration: RumorExpiration,
 }
 
 impl fmt::Display for Departure {
@@ -28,7 +30,10 @@ impl fmt::Display for Departure {
 }
 
 impl Departure {
-    pub fn new(member_id: &str) -> Self { Departure { member_id: member_id.to_string(), } }
+    pub fn new(member_id: &str) -> Self {
+        Departure { member_id:  member_id.to_string(),
+                    expiration: RumorExpiration::soon(), }
+    }
 }
 
 impl protocol::Message<ProtoRumor> for Departure {
@@ -41,13 +46,20 @@ impl FromProto<ProtoRumor> for Departure {
             RumorPayload::Departure(payload) => payload,
             _ => panic!("from-bytes departure"),
         };
+
+        let expiration = RumorExpiration::from_proto(payload.expiration)?;
         Ok(Departure { member_id: payload.member_id
-                                         .ok_or(Error::ProtocolMismatch("member-id"))?, })
+                                         .ok_or(Error::ProtocolMismatch("member-id"))?,
+                       expiration })
     }
 }
 
 impl From<Departure> for newscast::Departure {
-    fn from(value: Departure) -> Self { newscast::Departure { member_id: Some(value.member_id), } }
+    fn from(value: Departure) -> Self {
+        let exp = value.expiration.for_proto();
+        newscast::Departure { member_id:  Some(value.member_id),
+                              expiration: Some(exp), }
+    }
 }
 
 impl Rumor for Departure {
@@ -58,6 +70,8 @@ impl Rumor for Departure {
     fn id(&self) -> &str { &self.member_id }
 
     fn key(&self) -> &str { "departure" }
+
+    fn expiration(&self) -> &RumorExpiration { &self.expiration }
 }
 
 impl PartialOrd for Departure {

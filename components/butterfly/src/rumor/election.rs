@@ -17,6 +17,7 @@ use crate::{error::{Error,
                                   Rumor as ProtoRumor},
                        FromProto},
             rumor::{Rumor,
+                    RumorExpiration,
                     RumorPayload,
                     RumorType}};
 use std::{fmt,
@@ -41,6 +42,7 @@ pub struct Election {
     pub suitability:   u64,
     pub status:        ElectionStatus,
     pub votes:         Vec<String>,
+    pub expiration:    RumorExpiration,
 }
 
 impl fmt::Display for Election {
@@ -72,7 +74,8 @@ impl Election {
                    } else {
                        ElectionStatus::NoQuorum
                    },
-                   votes: vec![from_id] }
+                   votes: vec![from_id],
+                   expiration: RumorExpiration::forever() }
     }
 
     /// Insert a vote for the election.
@@ -130,26 +133,30 @@ impl FromProto<ProtoRumor> for Election {
             _ => panic!("from-bytes election"),
         };
         let from_id = rumor.from_id.ok_or(Error::ProtocolMismatch("from-id"))?;
-        Ok(Election { member_id:     from_id.clone(),
+        let expiration = RumorExpiration::from_proto(payload.expiration)?;
+        Ok(Election { member_id: from_id.clone(),
                       service_group: payload.service_group
                                             .ok_or(Error::ProtocolMismatch("service-group"))?,
-                      term:          payload.term.unwrap_or(0),
-                      suitability:   payload.suitability.unwrap_or(0),
-                      status:        payload.status
-                                            .and_then(ElectionStatus::from_i32)
-                                            .unwrap_or(ElectionStatus::Running),
-                      votes:         payload.votes, })
+                      term: payload.term.unwrap_or(0),
+                      suitability: payload.suitability.unwrap_or(0),
+                      status: payload.status
+                                     .and_then(ElectionStatus::from_i32)
+                                     .unwrap_or(ElectionStatus::Running),
+                      votes: payload.votes,
+                      expiration })
     }
 }
 
 impl From<Election> for newscast::Election {
     fn from(value: Election) -> Self {
+        let exp = value.expiration.for_proto();
         newscast::Election { member_id:     Some(value.member_id),
                              service_group: Some(value.service_group.to_string()),
                              term:          Some(value.term),
                              suitability:   Some(value.suitability),
                              status:        Some(value.status as i32),
-                             votes:         value.votes, }
+                             votes:         value.votes,
+                             expiration:    Some(exp), }
     }
 }
 
@@ -201,6 +208,8 @@ impl Rumor for Election {
     fn id(&self) -> &str { "election" }
 
     fn key(&self) -> &str { self.service_group.as_ref() }
+
+    fn expiration(&self) -> &RumorExpiration { &self.expiration }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -276,6 +285,8 @@ impl Rumor for ElectionUpdate {
     fn id(&self) -> &str { "election" }
 
     fn key(&self) -> &str { self.0.key() }
+
+    fn expiration(&self) -> &RumorExpiration { &self.0.expiration }
 }
 
 #[cfg(test)]

@@ -8,6 +8,7 @@ use crate::{error::{Error,
                        newscast,
                        FromProto},
             rumor::{Rumor,
+                    RumorExpiration,
                     RumorPayload,
                     RumorType}};
 use habitat_core::{package::Identifiable,
@@ -31,6 +32,7 @@ pub struct Service {
     pub pkg:           String,
     pub cfg:           Vec<u8>,
     pub sys:           SysInfo,
+    pub expiration:    RumorExpiration,
 }
 
 impl fmt::Display for Service {
@@ -55,6 +57,7 @@ impl Serialize for Service {
         strukt.serialize_field("cfg", &cfg)?;
         strukt.serialize_field("sys", &self.sys)?;
         strukt.serialize_field("initialized", &self.initialized)?;
+        strukt.serialize_field("expiration", &self.expiration)?;
         strukt.end()
     }
 }
@@ -107,7 +110,8 @@ impl Service {
                               toml::ser::to_vec(&toml::value::Value::Table(v))
                         .expect("Struct should serialize to bytes")
                           })
-                          .unwrap_or_default() }
+                          .unwrap_or_default(),
+                  expiration: RumorExpiration::forever() }
     }
 }
 
@@ -121,31 +125,35 @@ impl FromProto<newscast::Rumor> for Service {
             RumorPayload::Service(payload) => payload,
             _ => panic!("from-bytes service"),
         };
-        Ok(Service { member_id:     payload.member_id
-                                           .ok_or(Error::ProtocolMismatch("member-id"))?,
+        let expiration = RumorExpiration::from_proto(payload.expiration)?;
+        Ok(Service { member_id: payload.member_id
+                                       .ok_or(Error::ProtocolMismatch("member-id"))?,
                      service_group:
                          payload.service_group
                                 .ok_or(Error::ProtocolMismatch("service-group"))
                                 .and_then(|s| ServiceGroup::from_str(&s).map_err(Error::from))?,
-                     incarnation:   payload.incarnation.unwrap_or(0),
-                     initialized:   payload.initialized.unwrap_or(false),
-                     pkg:           payload.pkg.ok_or(Error::ProtocolMismatch("pkg"))?,
-                     cfg:           payload.cfg.unwrap_or_default(),
-                     sys:           payload.sys
-                                           .ok_or(Error::ProtocolMismatch("sys"))
-                                           .and_then(SysInfo::from_proto)?, })
+                     incarnation: payload.incarnation.unwrap_or(0),
+                     initialized: payload.initialized.unwrap_or(false),
+                     pkg: payload.pkg.ok_or(Error::ProtocolMismatch("pkg"))?,
+                     cfg: payload.cfg.unwrap_or_default(),
+                     sys: payload.sys
+                                 .ok_or(Error::ProtocolMismatch("sys"))
+                                 .and_then(SysInfo::from_proto)?,
+                     expiration })
     }
 }
 
 impl From<Service> for newscast::Service {
     fn from(value: Service) -> Self {
+        let exp = value.expiration.for_proto();
         newscast::Service { member_id:     Some(value.member_id),
                             service_group: Some(value.service_group.to_string()),
                             incarnation:   Some(value.incarnation),
                             initialized:   Some(value.initialized),
                             pkg:           Some(value.pkg),
                             cfg:           Some(value.cfg),
-                            sys:           Some(value.sys.into()), }
+                            sys:           Some(value.sys.into()),
+                            expiration:    Some(exp), }
     }
 }
 
@@ -166,6 +174,8 @@ impl Rumor for Service {
     fn id(&self) -> &str { &self.member_id }
 
     fn key(&self) -> &str { self.service_group.as_ref() }
+
+    fn expiration(&self) -> &RumorExpiration { &self.expiration }
 }
 
 #[derive(Debug, Clone, Serialize)]
