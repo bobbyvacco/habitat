@@ -345,11 +345,11 @@ impl<T> RumorStore<T> where T: Rumor
         self.update_counter.swap(0, Ordering::Relaxed)
     }
 
-    pub fn encode(&self, key: &str, member_id: &str) -> Result<Vec<u8>> {
+    pub fn encode(&self, key: &str, id: &str) -> Result<Vec<u8>> {
         let list = self.read_entries();
-        match list.get(key).and_then(|l| l.get(member_id)) {
+        match list.get(key).and_then(|l| l.get(id)) {
             Some(rumor) => rumor.clone().write_to_bytes(),
-            None => Err(Error::NonExistentRumor(String::from(member_id), String::from(key))),
+            None => Err(Error::NonExistentRumor(String::from(id), String::from(key))),
         }
     }
 
@@ -412,26 +412,26 @@ impl<T> RumorStore<T> where T: Rumor
         }
     }
 
-    pub fn with_rumor<F>(&self, key: &str, member_id: &str, mut with_closure: F)
+    pub fn with_rumor<F>(&self, key: &str, id: &str, mut with_closure: F)
         where F: FnMut(&T)
     {
         let list = self.read_entries();
         if let Some(sublist) = list.get(key) {
-            if let Some(rumor) = sublist.get(member_id) {
+            if let Some(rumor) = sublist.get(id) {
                 with_closure(rumor);
             }
         }
     }
 
-    pub fn assert_rumor_is<P>(&self, key: &str, member_id: &str, mut predicate: P)
+    pub fn assert_rumor_is<P>(&self, key: &str, id: &str, mut predicate: P)
         where P: FnMut(&T) -> bool
     {
         let list = self.read_entries();
         if let Some(sublist) = list.get(key) {
-            if let Some(rumor) = sublist.get(member_id) {
-                assert!(predicate(rumor), "{} failed predicate", member_id);
+            if let Some(rumor) = sublist.get(id) {
+                assert!(predicate(rumor), "{} failed predicate", id);
             } else {
-                panic!("member_id {} not present", member_id);
+                panic!("member_id {} not present", id);
             }
         } else {
             panic!("No rumors for {} present", key);
