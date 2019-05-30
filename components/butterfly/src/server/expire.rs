@@ -1,11 +1,12 @@
 //! Periodically check membership rumors to automatically "time out"
 //! `Suspect` rumors to `Confirmed`, and `Confirmed` rumors to
-//! `Departed`.
+//! `Departed`. Also purge any rumors that have expired.
 
 use crate::{rumor::{RumorKey,
                     RumorType},
             server::{timing::Timing,
                      Server}};
+use chrono::offset::Utc;
 use habitat_common::liveliness_checker;
 use std::{thread,
           time::Duration};
@@ -40,6 +41,14 @@ fn run_loop(server: &Server, timing: &Timing) -> ! {
             server.rumor_heat
                   .start_hot_rumor(RumorKey::new(RumorType::Member, &id, ""));
         }
+
+        let now = Utc::now();
+        server.departure_store.purge_expired(now);
+        server.election_store.purge_expired(now);
+        server.update_store.purge_expired(now);
+        server.service_store.purge_expired(now);
+        server.service_config_store.purge_expired(now);
+        server.service_file_store.purge_expired(now);
 
         thread::sleep(Duration::from_millis(LOOP_DELAY_MS));
     }

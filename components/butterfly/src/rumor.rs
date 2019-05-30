@@ -448,6 +448,23 @@ impl<T> RumorStore<T> where T: Rumor
     /// We don't care if this repeats - it just needs to be unique for any given two states, which
     /// it will be.
     fn increment_update_counter(&self) { self.update_counter.fetch_add(1, Ordering::Relaxed); }
+
+    /// Find rumors in our rumor store that have expired.
+    fn expired(&self, expiration_date: DateTime<Utc>) -> Vec<T> {
+        self.read_entries()
+            .values()
+            .flat_map(HashMap::values)
+            .filter(|&rumor| rumor.expiration().0 < expiration_date)
+            .cloned()
+            .collect()
+    }
+
+    /// Remove all rumors that have expired from our rumor store.
+    pub fn purge_expired(&self, expiration_date: DateTime<Utc>) {
+        self.expired(expiration_date)
+            .iter()
+            .for_each(|r| self.remove(r.key(), r.id()))
+    }
 }
 
 impl RumorStore<Service> {
