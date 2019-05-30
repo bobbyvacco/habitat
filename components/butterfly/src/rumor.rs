@@ -329,15 +329,24 @@ impl<T> RumorStore<T> where T: Rumor
                      ..Default::default() }
     }
 
+    fn read_entries(&self) -> std::sync::RwLockReadGuard<'_, HashMap<String, HashMap<String, T>>> {
+        self.list.read().expect("Rumor store lock poisoned")
+    }
+
+    fn write_entries(&self)
+                     -> std::sync::RwLockWriteGuard<'_, HashMap<String, HashMap<String, T>>> {
+        self.list.write().expect("Rumor store lock poisoned")
+    }
+
     /// Clear all rumors and reset update counter of RumorStore.
     pub fn clear(&self) -> usize {
-        let mut list = self.list.write().expect("Rumor store lock poisoned");
+        let mut list = self.write_entries();
         list.clear();
         self.update_counter.swap(0, Ordering::Relaxed)
     }
 
     pub fn encode(&self, key: &str, member_id: &str) -> Result<Vec<u8>> {
-        let list = self.list.read().expect("Rumor store lock poisoned");
+        let list = self.read_entries();
         match list.get(key).and_then(|l| l.get(member_id)) {
             Some(rumor) => rumor.clone().write_to_bytes(),
             None => Err(Error::NonExistentRumor(String::from(member_id), String::from(key))),
@@ -348,14 +357,14 @@ impl<T> RumorStore<T> where T: Rumor
 
     /// Returns the count of all rumors in the rumor store for the given member's key.
     pub fn len_for_key(&self, key: &str) -> usize {
-        let list = self.list.read().expect("Rumor store lock poisoned");
+        let list = self.read_entries();
         list.get(key).map_or(0, HashMap::len)
     }
 
     /// Insert a rumor into the Rumor Store. Returns true if the value didn't exist or if it was
     /// mutated; if nothing changed, returns false.
     pub fn insert(&self, rumor: T) -> bool {
-        let mut list = self.list.write().expect("Rumor store lock poisoned");
+        let mut list = self.write_entries();
         let rumors = list.entry(String::from(rumor.key()))
                          .or_insert_with(HashMap::new);
         let kind_ignored_count =
@@ -379,14 +388,14 @@ impl<T> RumorStore<T> where T: Rumor
     }
 
     pub fn remove(&self, key: &str, id: &str) {
-        let mut list = self.list.write().expect("Rumor store lock poisoned");
+        let mut list = self.write_entries();
         list.get_mut(key).and_then(|r| r.remove(id));
     }
 
     pub fn with_keys<F>(&self, mut with_closure: F)
         where F: FnMut((&String, &HashMap<String, T>))
     {
-        let list = self.list.read().expect("Rumor store lock poisoned");
+        let list = self.read_entries();
         for x in list.iter() {
             with_closure(x);
         }
@@ -395,7 +404,7 @@ impl<T> RumorStore<T> where T: Rumor
     pub fn with_rumors<F>(&self, key: &str, mut with_closure: F)
         where F: FnMut(&T)
     {
-        let list = self.list.read().expect("Rumor store lock poisoned");
+        let list = self.read_entries();
         if list.contains_key(key) {
             for x in list.get(key).unwrap().values() {
                 with_closure(x);
@@ -406,7 +415,7 @@ impl<T> RumorStore<T> where T: Rumor
     pub fn with_rumor<F>(&self, key: &str, member_id: &str, mut with_closure: F)
         where F: FnMut(&T)
     {
-        let list = self.list.read().expect("Rumor store lock poisoned");
+        let list = self.read_entries();
         if let Some(sublist) = list.get(key) {
             if let Some(rumor) = sublist.get(member_id) {
                 with_closure(rumor);
@@ -417,7 +426,7 @@ impl<T> RumorStore<T> where T: Rumor
     pub fn assert_rumor_is<P>(&self, key: &str, member_id: &str, mut predicate: P)
         where P: FnMut(&T) -> bool
     {
-        let list = self.list.read().expect("Rumor store lock poisoned");
+        let list = self.read_entries();
         if let Some(sublist) = list.get(key) {
             if let Some(rumor) = sublist.get(member_id) {
                 assert!(predicate(rumor), "{} failed predicate", member_id);
@@ -430,7 +439,7 @@ impl<T> RumorStore<T> where T: Rumor
     }
 
     pub fn contains_rumor(&self, key: &str, id: &str) -> bool {
-        let list = self.list.read().expect("Rumor store lock poisoned");
+        let list = self.read_entries();
         list.get(key).and_then(|l| l.get(id)).is_some()
     }
 
@@ -445,11 +454,7 @@ impl RumorStore<Service> {
     /// Returns true if there exist rumors for the given service's service
     /// group, but none containing the given member.
     pub fn contains_group_without_member(&self, service_group: &str, member_id: &str) -> bool {
-        match self.list
-                  .read()
-                  .expect("Rumor store lock poisoned")
-                  .get(service_group)
-        {
+        match self.read_entries().get(service_group) {
             Some(group_rumors) => !group_rumors.contains_key(member_id),
             None => false,
         }
@@ -465,7 +470,7 @@ impl RumorStore<Service> {
                               service_group: &str,
                               predicate: impl FnMut(&&String) -> bool)
                               -> Option<String> {
-        let list = self.list.read().expect("Rumor store lock poisoned");
+        let list = self.read_entries();
         list.get(service_group)
             .and_then(|rumor_map| rumor_map.keys().filter(predicate).min().cloned())
     }
