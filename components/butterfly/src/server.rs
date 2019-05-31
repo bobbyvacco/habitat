@@ -646,6 +646,14 @@ impl Server {
         }
     }
 
+    /// Mark a service for deletion. This means butterfly will mark the Service, ServiceConfig and
+    /// ServiceFile rumors related to this service as expired. They will eventually be purged.
+    pub fn mark_service_for_deletion(&self, service: Service) {
+        self.service_store.expire_all_for_key(service.key());
+        self.service_config_store.expire_all_for_key(service.key());
+        self.service_file_store.expire_all_for_key(service.key());
+    }
+
     /// Insert a service rumor into the service store.
     /// If we're adding a new service group member, we want to avoid the
     /// situation where we could lose quorum due to Confirmed but not yet
@@ -792,6 +800,9 @@ impl Server {
     /// * `MemberList::entries` (read) This method must not be called while any MemberList::entries
     ///   lock is held.
     pub fn start_election_mlr(&self, service_group: &str, term: u64) {
+        // Before starting a new election, let's mark any old ones as expired
+        self.election_store.expire_all_for_key(service_group);
+
         let suitability = self.suitability_lookup.get(&service_group);
         let has_quorum = self.check_quorum_mlr(service_group);
         let e = Election::new(self.member_id(),
@@ -810,6 +821,9 @@ impl Server {
     /// * `MemberList::entries` (read) This method must not be called while any MemberList::entries
     ///   lock is held.
     pub fn start_update_election_mlr(&self, service_group: &str, suitability: u64, term: u64) {
+        // Before starting a new election, let's mark any old ones as expired
+        self.update_store.expire_all_for_key(service_group);
+
         let has_quorum = self.check_quorum_mlr(service_group);
         let e = ElectionUpdate::new(self.member_id(),
                                     service_group,

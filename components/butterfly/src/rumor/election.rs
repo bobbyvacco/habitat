@@ -207,9 +207,11 @@ impl Rumor for Election {
     /// There can be only
     fn id(&self) -> &str { "election" }
 
-    fn key(&self) -> &str { self.service_group.as_ref() }
+    fn key(&self) -> &str { &self.service_group }
 
     fn expiration(&self) -> &RumorExpiration { &self.expiration }
+
+    fn expiration_as_mut(&mut self) -> &mut RumorExpiration { &mut self.expiration }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -287,6 +289,8 @@ impl Rumor for ElectionUpdate {
     fn key(&self) -> &str { self.0.key() }
 
     fn expiration(&self) -> &RumorExpiration { &self.0.expiration }
+
+    fn expiration_as_mut(&mut self) -> &mut RumorExpiration { &mut self.0.expiration }
 }
 
 #[cfg(test)]

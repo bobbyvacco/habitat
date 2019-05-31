@@ -1187,21 +1187,24 @@ impl Manager {
     /// * `MemberList::entries` (write) This method must not be called while any MemberList::entries
     ///   lock is held.
     fn gossip_latest_service_rumor_mlw(&self, service: &Service) {
-        let incarnation = if let Some(rumor) = self.butterfly
-                                                   .service_store
-                                                   .list
-                                                   .read()
-                                                   .expect("Rumor store lock poisoned")
-                                                   .get(&*service.service_group)
-                                                   .and_then(|r| r.get(&self.sys.member_id))
+        let incarnation = self.incarnation_for_service(service);
+        self.butterfly
+            .insert_service_mlw(service.to_rumor(incarnation));
+    }
+
+    fn incarnation_for_service(&self, service: &Service) -> u64 {
+        if let Some(rumor) = self.butterfly
+                                 .service_store
+                                 .list
+                                 .read()
+                                 .expect("Rumor store lock poisoned")
+                                 .get(&*service.service_group)
+                                 .and_then(|r| r.get(&self.sys.member_id))
         {
             rumor.clone().incarnation + 1
         } else {
             1
-        };
-
-        self.butterfly
-            .insert_service_mlw(service.to_rumor(incarnation));
+        }
     }
 
     fn check_for_departure(&self) -> bool { self.butterfly.is_departed() }
@@ -1342,6 +1345,9 @@ impl Manager {
 
     fn stop(&self, service: Service) -> impl Future<Item = (), Error = ()> {
         let shutdown_config = ShutdownConfig::new_from_service(&service);
+        let incarnation = self.incarnation_for_service(&service);
+        self.butterfly
+            .mark_service_for_deletion(service.to_rumor(incarnation));
         self.stop_with_config(service, shutdown_config)
     }
 

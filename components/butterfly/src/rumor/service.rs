@@ -176,6 +176,8 @@ impl Rumor for Service {
     fn key(&self) -> &str { self.service_group.as_ref() }
 
     fn expiration(&self) -> &RumorExpiration { &self.expiration }
+
+    fn expiration_as_mut(&mut self) -> &mut RumorExpiration { &mut self.expiration }
 }
 
 #[derive(Debug, Clone, Serialize)]

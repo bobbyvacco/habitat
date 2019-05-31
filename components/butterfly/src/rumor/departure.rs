@@ -72,6 +72,8 @@ impl Rumor for Departure {
     fn key(&self) -> &str { "departure" }
 
     fn expiration(&self) -> &RumorExpiration { &self.expiration }
+
+    fn expiration_as_mut(&mut self) -> &mut RumorExpiration { &mut self.expiration }
 }
 
 impl PartialOrd for Departure {

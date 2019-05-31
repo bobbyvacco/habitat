@@ -70,7 +70,11 @@ impl RumorExpiration {
 
     // This is more of a generic expiration date that we can apply whenever we have a rumor we
     // don't need to keep around any more.
-    pub fn soon() -> Self { RumorExpiration(Utc::now() + Duration::hours(1)) }
+    pub fn soon() -> Self { RumorExpiration(Self::soon_date()) }
+
+    pub fn expire(&mut self) { self.0 = Self::soon_date() }
+
+    fn soon_date() -> DateTime<Utc> { Utc::now() + Duration::hours(1) }
 
     pub fn for_proto(&self) -> String { self.0.to_rfc3339() }
 
@@ -143,6 +147,8 @@ pub trait Rumor: Message<ProtoRumor> + Sized {
     fn id(&self) -> &str;
     fn merge(&mut self, other: Self) -> bool;
     fn expiration(&self) -> &RumorExpiration;
+    fn expiration_as_mut(&mut self) -> &mut RumorExpiration;
+    fn expire(&mut self) { self.expiration_as_mut().expire() }
 }
 
 impl<'a, T: Rumor> From<&'a T> for RumorKey {
@@ -477,6 +483,12 @@ impl<T> RumorStore<T> where T: Rumor
             .iter()
             .map(RumorKey::from)
             .collect()
+    }
+
+    pub fn expire_all_for_key(&self, key: &str) {
+        if let Some(m) = self.write_entries().get_mut(key) {
+            m.values_mut().for_each(|r| r.expire());
+        }
     }
 }
 
