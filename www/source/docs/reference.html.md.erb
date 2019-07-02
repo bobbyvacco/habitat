@@ -51,7 +51,7 @@ This is a list of all environment variables that can be used to modify the opera
 | `HAB_RING_KEY` | Supervisor | no default | The contents of the ring key when running with [wire encryption](/docs/using-habitat#using-encryption). Useful when running in a container. |
 | `HAB_STUDIO_SECRET_<VARIABLE>` | build system | no default | Prefix to allow environment variables into the Studio. The prefix will be removed and your variable will be passed into the Studio at build time. |
 | `HAB_STUDIOS_HOME` | build system | `/hab/studios` | Directory in which to create build Studios |
-| `HAB_STUDIO_BACKLINE_PKG` | build system | `core/hab-backline/{{studio_version}}` | Overrides the default package identifier for the "backline" package which installs the Studio basline package set. |
+| `HAB_STUDIO_BACKLINE_PKG` | build system | `core/hab-backline/{{studio_version}}` | Overrides the default package identifier for the "backline" package which installs the Studio baseline package set. |
 | `HAB_STUDIO_ROOT` | build system | no default | Root of the current Studio under `$HAB_STUDIOS_HOME`. Infrequently overridden. |
 | `HAB_STUDIO_NOSTUDIORC` | build system | no default | When set to a non-empty value, a `.studiorc` will not be sourced when entering an interactive Studio via `hab studio enter`. |
 | `HAB_STUDIO_SUP` | build system | no default | Used to customize the arguments passed to an automatically launched Supervisor, or to disable the automatic launching by setting it to `false`, `no`, or `0`. |
@@ -424,7 +424,7 @@ _perl_path="$(pkg_path_for core/perl)/bin/perl"
 ```
 
 **fix_interpreter()**
-: `plan.sh` only. Edits the `#!` shebang of the target file in-place. This is useful for changing hardcoded paths defined by your source files to the equivalent path in a Chef Habitat package. You must include the required package that provides the expected path for the shebang in pkg_deps. This function performs a greedy match against the specified interpreter in the target file(s).
+: `plan.sh` only. Edits the `#!` shebang of the target file in-place. This is useful for changing hard-coded paths defined by your source files to the equivalent path in a Chef Habitat package. You must include the required package that provides the expected path for the shebang in pkg_deps. This function performs a greedy match against the specified interpreter in the target file(s).
 
 To use this function in your plan, you must specify the following arguments:
   1. The target file or files
@@ -604,7 +604,7 @@ The buildtime environment is assembled by processing the *runtime* environments 
 
 * The system environment of your Studio as the base layer
 * The assembled runtime environment of your package on top of the base
-* Any builtime environment information on top of the assembled runtime environment 
+* Any buildtime environment information on top of the assembled runtime environment 
 
 Only the runtime portion of this combined buildtime environment is made available to your package when it is running in a Supervisor (or when it is being used as a dependency of another Chef Habitat package).
 
@@ -828,20 +828,20 @@ exit $rc
 **install**
 : File location `<plan>/hooks/install`. This hook is run when a package is initially installed. 
 
-An `install` hook may be triggered by `hab pkg install` or by a Supervisor loading a new package. Note that any package can define an `install` hook and it is not limited to packages that are loaded as services into a Supervisor. A package may have dependencies defined in `pkg_deps` or `pkg_build_deps` that define their own `install` hook. An `install` hook defined in an dependant package that has not yet been installed will run when the parent package is installed. However `install` hooks in a runtime dependancy (`pkg_deps`) will not run when loaded via a package `build` inside of a Studio.
+An `install` hook may be triggered by `hab pkg install` or by a Supervisor loading a new package. Note that any package can define an `install` hook and it is not limited to packages that are loaded as services into a Supervisor. A package may have dependencies defined in `pkg_deps` or `pkg_build_deps` that define their own `install` hook. An `install` hook defined in an dependant package that has not yet been installed will run when the parent package is installed. However `install` hooks in a runtime dependency (`pkg_deps`) will not run when loaded via a package `build` inside of a Studio.
 
 The exit code returned from an `install` hook will be "remembered". If a previously installed package is either installed again via `hab pkg install` or loaded into a Supervisor, its `install` hook will be rerun if it previously failed (exited with a non `0` result) or has not been previously run (perhaps because `--ignore-install-hook` was passed to `hab pkg install`).
 
-An `install` hook, unlike other hooks, will not have access to any census data exposed via binds or the `svc` namespace. Also, configuration in `svc_config_path` is not accesible to an `install` hook. If an `install` hook needs to utilize templated configuration files, templates located in the `svc_config_install_path` may be referenced. This location will contain rendered templates in a package's `config_install` folder. Finally, any configuration updates made during a service's runtime that would alter an `install` hook or any configuration template in `svc_config_install_path` will not cause a service to reload.
+An `install` hook, unlike other hooks, will not have access to any census data exposed via binds or the `svc` namespace. Also, configuration in `svc_config_path` is not accessible to an `install` hook. If an `install` hook needs to utilize templated configuration files, templates located in the `svc_config_install_path` may be referenced. This location will contain rendered templates in a package's `config_install` folder. Finally, any configuration updates made during a service's runtime that would alter an `install` hook or any configuration template in `svc_config_install_path` will not cause a service to reload.
 
 **reload**
-: File location `<plan>/hooks/reload`. For processes that can update their configuration without requiring a restart a `reload` hook can be written. This hook will execute instead of the default behaviour of restarting the process. `{{pkg.svc_pid_file}}` can be used to get a handle on the `PID` of the service.
+: File location `<plan>/hooks/reload`. For processes that can update their configuration without requiring a restart a `reload` hook can be written. This hook will execute instead of the default behavior of restarting the process. `{{pkg.svc_pid_file}}` can be used to get a handle on the `PID` of the service.
 
 **reconfigure**
 : File location `<plan>/hooks/reconfigure`. This hook is run when service configuration has changed due to updates coming from the gossip protocol or from the `user.toml` file. Before the `reconfigure` hook the config files are re-rendered and the process is either restarted or the `reload` hook is called if present.
 
 **suitability**
-: File location `<plan>/hooks/suitability`. The suitability hook allows a service to report a priority by which it should be elected leader. The hook is called when a new election is triggered and the last line it outputs to `stdout` should be a number parsable as a `u64`. In the event that a leader goes down and an election is started the service with the highest reported suitabilty will become the new leader.
+: File location `<plan>/hooks/suitability`. The suitability hook allows a service to report a priority by which it should be elected leader. The hook is called when a new election is triggered and the last line it outputs to `stdout` should be a number parsable as a `u64`. In the event that a leader goes down and an election is started the service with the highest reported suitability will become the new leader.
 
 **run**
 : File location `<plan>/hooks/run`. This hook is run when one of the following conditions occur:
@@ -864,7 +864,7 @@ A run hook can use the following as a template:
 ```bash hooks/run
 #!/bin/sh
 
-edirect stderr
+redirect stderr
 exec 2>&1
 
 # Set some environment variables
@@ -884,15 +884,14 @@ exec my_command --option {{cfg.option}} --option2 {{cfg.option2}}
 ---
 ## <a name="helpers" id="helpers" data-magellan-target="helpers" class="anchor">Handlebars Helpers</a>
 
-Chef Habitat not only allows you to use [Handlebars-based](http://handlebarsjs.com) tunables in your plan, but you can also use both built-in Handlebars helpers as well as Chef Habitat-specific helpers to define your configuration logic. 
+Chef Habitat allows you to use [Handlebars-based](http://handlebarsjs.com) tuneables in your plan, and you can also use both built-in Handlebars helpers and Chef Habitat-specific helpers in defining your configuration logic. 
 
 - [Built-in Helpers](#builtin-helpers)
 - [Chef Habitat Helpers](#habitat-helpers)
 
 ### <a name="builtin-helpers" id="builtin-helpers" data-magellan-target="builtin-helpers" class="anchor">Built-In Helpers</a>
 
-You can use block expressions to add basic logic to your template such as checking if a
-value exists or iterating through a list of items.
+You can use block expressions to add basic logic to your template such as checking if a value exists or iterating through a list of items.
 
 Block expressions use a helper function to perform the logic. The
 syntax is the same for all block expressions and looks like this:
@@ -991,7 +990,7 @@ And for both **each** and **unless**, you can use `@first` and `@last` to specif
       {{/each ~}}
     }
 
-> **Note** The `@first` and `@last` variables also work with the Chef Habitat helper `eachAlive`, and in the example above, it would be preferrable to the built-in `each` helper because it checks whether the service is available before trying to retrieve any values.
+> **Note** The `@first` and `@last` variables also work with the Chef Habitat helper `eachAlive`, and in the example above, it would be preferable to the built-in `each` helper because it checks whether the service is available before trying to retrieve any values.
 
 **unless**
 : For `unless`, using `@last` can also be helpful when you need to optionally include delimiters. In the example below, the IP addresses of the alive members returned by the `servers` binding is comma-separated. The logic check `{{#unless @last}}, {{/unless}}` at the end ensures that the comma is written after each element except the last element.
@@ -1329,7 +1328,7 @@ Packages are installed in the `/hab/pkgs/` directory, and then further organized
 : The fully-qualified identifier for the package. The format is `origin/name/version/release`.
 
 **INTERPRETERS**
-: If `pkg_interpreters` is specified in your plan.sh, then this file will be generated and contain a list of absolute paths to any interpreters that a package can provide. Code in a `plan.sh` may use the `fix_interpreter` function to replace hardcoded instances of interpreters, such as `/bin/env`. The location of interpreters in Chef Habitat will be nested under `/hab/pkgs/`. For more information on interpreters, see the fix_interpreter description in [Plan helper functions](/docs/reference#utility-functions).
+: If `pkg_interpreters` is specified in your plan.sh, then this file will be generated and contain a list of absolute paths to any interpreters that a package can provide. Code in a `plan.sh` may use the `fix_interpreter` function to replace hard-coded instances of interpreters, such as `/bin/env`. The location of interpreters in Chef Habitat will be nested under `/hab/pkgs/`. For more information on interpreters, see the fix_interpreter description in [Plan helper functions](/docs/reference#utility-functions).
 
 **LDFLAGS**
 : Additional switches to be passed to the compiler when this package is used as a build dependency.
@@ -1341,7 +1340,7 @@ Packages are installed in the `/hab/pkgs/` directory, and then further organized
 : A file containing package information, such as checksum, maintainer, build variables, and other metadata specified in plan.sh as well as the contents of the plan.sh itself.
 
 **PATH**
-: A file that contains all directories in the package which contain program binaries. The directories are seperated with the target platform's path seperator character (i.e. either `:` or `;`).
+: A file that contains all directories in the package which contain program binaries. The directories are separated with the target platform's path separator character (i.e. either `:` or `;`).
 
 **RUNTIME_ENVIRONMENT**
 : A file containing the result of the layering operation of the current package's runtime environment variables on top of those of its dependencies. This is what the build process consults when it processes dependencies, and this is what the Supervisor consults in concert with `RUNTIME_PATH` when generating the full set of environment variables that should be added to an environment before running a supervised process.

@@ -5,7 +5,7 @@ description: Documentation and tutorials for Chef Habitat including getting star
 
 # <a name="overview" id="overview" data-magellan-target="overview">Using Chef Habitat</a>
 
-Chef Habitat centers application configuration, management, and behavior around the application itself, not the infrastructure or operating system it runs on. This allows Chef Habitat to be deployed and run on a wide array of clouds, datacenters, schedulers, and platforms.
+Chef Habitat centers application configuration, management, and behavior around the application itself, not the infrastructure or operating system it runs on. This allows Chef Habitat to be deployed and run on a wide array of clouds, data centers, schedulers, and platforms.
 
 <%= partial 'partials/global/package_platform_support' %>
 
@@ -46,7 +46,7 @@ For further details about these commands, including all the arguments and option
 When executing `hab sup run`, additional options can be passed that allow the Supervisor to communicate with other Supervisors (such as `--peer`, `--permanent-peer`, etc.), forming a connected network of Supervisors; this is the communication backbone that any services running on the Supervisors use to communicate with each other.
 
 **hab sup run \<PACKAGE_IDENTIFIER\>**
-: When you pass a package identifier (e.g., `core/redis`) as an argument to `hab sup run`, it will start up a Supervisor process, and then load and start the given package in what is effectively a single operation. This is a convenience that is intended primarily for container entrypoint workflows, where a single defined service is the only thing ever intended to run on the Supervisor, but it can also be used for local testing or experimentation.
+: When you pass a package identifier (e.g., `core/redis`) as an argument to `hab sup run`, it will start up a Supervisor process, and then load and start the given package in what is effectively a single operation. This is a convenience that is intended primarily for container entry-point workflows, where a single defined service is the only thing ever intended to run on the Supervisor, but it can also be used for local testing or experimentation.
 
 This version of `hab sup run` can also accept options that affect how the _package_ should run, such as `--strategy` and `--topology`, in addition to the aforementioned Supervisor-specific options. It can be thought of as running the identifier-less `hab sup run`, along with a `hab sup load`, all as a single command.
 
@@ -150,7 +150,7 @@ $ hab svc status core/mysql
 The following exit codes are emitted by the `status` command:
 
 * `0` - The status command successfully reports status on loaded services
-* `1` - A generic error has occured calling the `hab` cli
+* `1` - A generic error has occurred calling the `hab` cli
 * `2` - A service identifier was passed to `hab svc status` and that service is not loaded by the Supervisor
 * `3` - There is no local running Supervisor
 
@@ -234,7 +234,7 @@ $ curl -v -H "Authorization: Bearer sekret" http://172.17.0.2:9631/services
 
 ### Bastion Ring / Permanent Peers 
 
-A “Bastion Ring” is a pattern for preventing rumor loss and a split brain in a network of Chef Habitat Supervisors - it is highly recommended for any real environment use case. Create a minimum of 3 Supervisors and join them together. They should not run any services and they should be marked as permanent peers - their only job is to spread rumors to each other. Then, when you provision additional Supervisors pass the network address of each Supervisor running in the Bastion Ring to the `--peer` argument of `hab sup run`. It’s recommended to create a Bastion Ring in any network zones which may become partitioned due to a hardware failure. For example, if you have a Chef Habitat ring spanning multiple datacenters and clouds, each should have a bastion ring of a minimum of 3 Supervisors in addition to the Supervisors running your services.
+A “Bastion Ring” is a pattern for preventing rumor loss and a split brain in a network of Chef Habitat Supervisors - it is highly recommended for any real environment use case. Create a minimum of 3 Supervisors and join them together. They should not run any services and they should be marked as permanent peers - their only job is to spread rumors to each other. Then, when you provision additional Supervisors pass the network address of each Supervisor running in the Bastion Ring to the `--peer` argument of `hab sup run`. It’s recommended to create a Bastion Ring in any network zones which may become partitioned due to a hardware failure. For example, if you have a Chef Habitat ring spanning multiple data centers and clouds, each should have a bastion ring of a minimum of 3 Supervisors in addition to the Supervisors running your services.
 
 ### Using a scheduler
 
@@ -262,7 +262,7 @@ and can be segmented based on workflow or deployment needs (QA, Production, and 
 [encrypted](/docs/using-habitat/#using-encryption) so that only members of a specific service
 group can decrypt the contents.
 
-By default, every service joins the _servicename_.**default** service group unless otherwise specified at runtime.
+By default, every service joins the _service-name_.**default** service group unless otherwise specified at runtime.
 
 In addition, multiple service groups can reside in the same Supervisor network. This allows data exposed by Supervisors to
 be shared with other members of the ring, regardless of which group they are in.
@@ -555,14 +555,14 @@ As explained in the [security overview](/docs/internals#crypto-internals), this 
 1. Generate a service group key using the `hab` command-line tool. This can be done on your workstation. Because asymmetric encryption is being used, two files will be generated: a file with a `.box.key` extension, which is the service group's private key, and a file with a `.pub` extension, which is the service group's public key.
 
     ```shell
-    $ hab svc key generate servicegroupname.example <ORG>
+    $ hab svc key generate servicegroup-name.example <ORG>
     ```
 
-2. This generated a service group key for the service group `servicegroupname.example` in the organization `<ORG>`. Copy the `.box.key` private key to the environment where the Supervisor will run into the `/hab/cache/keys` directory. Ensure that it has the appropriate permissions so that only the Supervisor can read it.
+2. This generated a service group key for the service group `servicegroup-name.example` in the organization `<ORG>`. Copy the `.box.key` private key to the environment where the Supervisor will run into the `/hab/cache/keys` directory. Ensure that it has the appropriate permissions so that only the Supervisor can read it.
 3. Start the Supervisor, specifying both the service group and organization that it belongs to:
 
     ```shell
-    $ hab sup run --org <ORG> --group servicegroupname.example
+    $ hab sup run --org <ORG> --group servicegroup-name.example
     $ hab svc load <ORIGIN>/<NAME>
     ```
 
@@ -679,11 +679,11 @@ To start a service with an update strategy and pointing to a channel, specify th
 
     $ hab svc load <origin>/<package> --strategy rolling --channel test
 
-While that service is running, update your package, rebuild it, and then promote it to the same channel that the previous release of that serviceis currently running in (e.g. `test`). Those running instances should now update according to their update strategy.
+While that service is running, update your package, rebuild it, and then promote it to the same channel that the previous release of that service is currently running in (e.g. `test`). Those running instances should now update according to their update strategy.
 
-### Demoting a package from a phannel
+### Demoting a package from a channel
 
-If you need to unassociate a channel from a specific package release, you can do so using the `hab pkg demote` subcommand. Packages can be demoted from all channels except `unstable`.
+If you need to un-associate a channel from a specific package release, you can do so using the `hab pkg demote` subcommand. Packages can be demoted from all channels except `unstable`.
 
 ```bash
 $ hab pkg demote -z <TOKEN> <origin>/<package>/<version>/<release> test
@@ -790,7 +790,7 @@ Without specifying `--remote-sup`, the `hab` CLI will always try to connect to a
 
 ### Protocol versioning and `hab` versions
 
-Before the 0.56.0 release of Chef Habitat, the interaction between `hab` and the Supervisor was not formally defined, and relied on making changes to files on disk. As a result, it was often possible to continue interacting with a newer Supervisor using an older version of the `hab` CLI. This was particularly noticable when the Supervisor was configured to automatically update itself; the Supervisor would continue upgrading over time, while the `hab` CLI binary remained at whatever version it was when it was originally installed, because the two executables are distributed in separate packages.
+Before the 0.56.0 release of Chef Habitat, the interaction between `hab` and the Supervisor was not formally defined, and relied on making changes to files on disk. As a result, it was often possible to continue interacting with a newer Supervisor using an older version of the `hab` CLI. This was particularly noticeable when the Supervisor was configured to automatically update itself; the Supervisor would continue upgrading over time, while the `hab` CLI binary remained at whatever version it was when it was originally installed, because each of the two executable were distributed in separate packages.
 
 For the near term, `hab` and the Supervisor are still distributed separately, as `core/hab` and `core/hab-sup`, respectively. To interact with 0.56.0 or later Supervisors, operators will need to use an 0.56.0 or later `hab` binary, even if they wish to continue interacting with their Supervisors only locally. This may require a manual upgrade for the `hab` binary, which can be done by running `hab pkg install core/hab -b -f`. In the near future, we hope to consolidate all of Chef Habitat's functionality into a single package (if not a single binary), which will make it easier to manage going forward.
 

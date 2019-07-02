@@ -6,7 +6,7 @@ description: Documentation for Chef Habitat uploading, auto-building, and deploy
 
 <a target="_blank" href="https://bldr.habitat.sh/#/sign-in">Chef Habitat Builder</a> allows you to store, automatically build, and deploy your Chef Habitat packages. The documentation below covers everything from creating an account to setting up automated builds and exporting packages to a variety of container registries.
 
-> For a guided walkthrough of this process, try the [Build System demo](/demo/build-system/steps/1/).
+> For a guided walk-through of this process, try the [Build System demo](/demo/build-system/steps/1/).
 
 ## Table of Contents
 
@@ -178,7 +178,7 @@ To create origin keys from your host machine, use:
 hab origin key generate <ORIGIN>
 ```
 
-Your keys will be stored in `~/.hab/cache/keys` on Linux sytems. 
+Your keys will be stored in `~/.hab/cache/keys` on Linux systems. 
 
 ```bash
 ls ~/.hab/cache/keys
@@ -247,7 +247,7 @@ export SSL_CERT_FILE=/usr/local/etc/openssl/cert.pem
 Initialize the setting from the command line with:
 
 ```bash
- source ~/.bashshrc 
+ source ~/.bashrc 
 ```
 
 ---
@@ -320,7 +320,7 @@ You interact with Chef Habitat Builder by:
 * Creating an origin, or being invited to join an origin that already exists.
 * Setting up `hab` to authenticate with Builder.
 * Uploading the private and public keys for that origin.
-* Connecting your Github repos and opting into rebuilds.
+* Connecting your Github repositories and opting into rebuilds.
 
 Chef Habitat Builder supports both public and private origins, packages, and Github repositories.
 
@@ -412,7 +412,7 @@ Note: On a clean server, this will download additional packages to satisfy the S
 
 If you have a GitHub repository with multiple components inside, you will most likely also have individual plans for those components that are located inside of component subfolders. By default, Builder will only look for a package plan in either the root of the repository, or in a `habitat` subfolder at the root. If it does not find a plan file in those locations, it will not automatically issue builds when it detects file changes in the repository.
 
-In order to tell Builder about the location of the individual plan files, and in order provide more fine-grained control over when component packages are built, you can programatically customize how and when Builder will build your plans by specifying build behavior in a `.bldr.toml` file at the root of the repository that you connect to Builder.
+In order to tell Builder about the location of the individual plan files, and in order provide more fine-grained control over when component packages are built, you can programmatically customize how and when Builder will build your plans by specifying build behavior in a `.bldr.toml` file at the root of the repository that you connect to Builder.
 
 Using this file, Builder only builds packages when source files or directories are updated in paths specified in `.bldr.toml`. This allows you to configure the building, publishing, and post-processing phases of a plan build in Builder.
 
@@ -459,11 +459,11 @@ To enable this functionality, do the following:
 
 * `?` will match any single character.
 * `*` will match any (possibly empty) sequence of characters
-* `**` matches the current directory and arbitrary subdirectories. This sequence must form a single path component, so both `**a` and `b**` are invlid. More than two consecutive `*` characters is also invalid.
+* `**` matches the current directory and arbitrary subdirectories. This sequence must form a single path component, so both `**a` and `b**` are invalid. More than two consecutive `*` characters is also invalid.
 * `[...]` matches any character inside the brackets. You can also specify a range, such as `[0-9]` to match any digit or `[a-z]` to match any lowercase letter.
 * `[!...]` is the negation of `[...]` so it will match any character *not* in the brackets.
 
-    Note that while the above set of rules bears a remarkable resemblence to regular expressions, we do not support full regular expression syntax. Only what's shown here is supported. Here is an example.
+    Note that while the above set of rules bears a remarkable resemblance to regular expressions, we do not support full regular expression syntax. Only what's shown here is supported. Here is an example.
 
     ```toml
     # .bldr.toml
@@ -494,7 +494,7 @@ To connect a plan to Builder, view one of your origins (while signed in), click 
 
 #### Auto-build option
 
-The auto-build option controls whether or not your package will get automatically re-built. This option is a useful capability to have - for example, if you have a demo app that doesn’t need to be kept constantly up to date when some underlying dependency updates. Auto-build encompasss both builds that are triggered by Github web hooks (on commits to master), as well as builds that are triggered by a dependency updating.
+The auto-build option controls whether or not your package will get automatically re-built. This option is a useful capability to have - for example, if you have a demo app that doesn’t need to be kept constantly up to date when some underlying dependency updates. Auto-build encompasses both builds that are triggered by Github web hooks (on commits to master), as well as builds that are triggered by a dependency updating.
 
 By default, new plan connections will have auto-build turned off.
 
