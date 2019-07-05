@@ -732,8 +732,7 @@ mod tests {
     use crate::test_helpers::*;
     use habitat_butterfly::{member::{Health,
                                      MemberList},
-                            rumor::{election::{self,
-                                               Election as ElectionRumor,
+                            rumor::{election::{Election as ElectionRumor,
                                                ElectionUpdate as ElectionUpdateRumor},
                                     service::{Service as ServiceRumor,
                                               SysInfo},

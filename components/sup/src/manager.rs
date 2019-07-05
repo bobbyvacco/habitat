@@ -1335,6 +1335,9 @@ impl Manager {
                         service: Service,
                         shutdown_config: ShutdownConfig)
                         -> impl Future<Item = (), Error = ()> {
+        let incarnation = self.incarnation_for_service(&service);
+        self.butterfly
+            .mark_service_for_deletion(service.to_rumor(incarnation));
         Self::service_stop_future(service,
                                   shutdown_config,
                                   Arc::clone(&self.user_config_watcher),
@@ -1345,9 +1348,6 @@ impl Manager {
 
     fn stop(&self, service: Service) -> impl Future<Item = (), Error = ()> {
         let shutdown_config = ShutdownConfig::new_from_service(&service);
-        let incarnation = self.incarnation_for_service(&service);
-        self.butterfly
-            .mark_service_for_deletion(service.to_rumor(incarnation));
         self.stop_with_config(service, shutdown_config)
     }
 

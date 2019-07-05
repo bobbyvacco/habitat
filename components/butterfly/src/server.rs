@@ -800,9 +800,6 @@ impl Server {
     /// * `MemberList::entries` (read) This method must not be called while any MemberList::entries
     ///   lock is held.
     pub fn start_election_mlr(&self, service_group: &str, term: u64) {
-        // Before starting a new election, let's mark any old ones as expired
-        self.election_store.expire_all_for_key(service_group);
-
         let suitability = self.suitability_lookup.get(&service_group);
         let has_quorum = self.check_quorum_mlr(service_group);
         let e = Election::new(self.member_id(),
@@ -821,9 +818,6 @@ impl Server {
     /// * `MemberList::entries` (read) This method must not be called while any MemberList::entries
     ///   lock is held.
     pub fn start_update_election_mlr(&self, service_group: &str, suitability: u64, term: u64) {
-        // Before starting a new election, let's mark any old ones as expired
-        self.update_store.expire_all_for_key(service_group);
-
         let has_quorum = self.check_quorum_mlr(service_group);
         let e = ElectionUpdate::new(self.member_id(),
                                     service_group,
@@ -1324,7 +1318,8 @@ mod tests {
                   initialized:   Default::default(),
                   pkg:           Default::default(),
                   cfg:           Default::default(),
-                  sys:           Default::default(), }
+                  sys:           Default::default(),
+                  expiration:    RumorExpiration::default(), }
     }
 
     #[test]

@@ -48,8 +48,13 @@ pub struct Election {
 impl fmt::Display for Election {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f,
-               "Election m/{} sg/{}, t/{}, su/{}, st/{:?}",
-               self.member_id, self.service_group, self.term, self.suitability, self.status)
+               "Election m/{} sg/{}, t/{}, su/{}, st/{:?} e/{}",
+               self.member_id,
+               self.service_group,
+               self.term,
+               self.suitability,
+               self.status,
+               self.expiration)
     }
 }
 
@@ -75,7 +80,7 @@ impl Election {
                        ElectionStatus::NoQuorum
                    },
                    votes: vec![from_id],
-                   expiration: RumorExpiration::forever() }
+                   expiration: RumorExpiration::default() }
     }
 
     /// Insert a vote for the election.
@@ -110,6 +115,8 @@ impl ElectionRumor for Election {
     fn term(&self) -> u64 { self.term }
 }
 
+// Unlike the other rumors, Election doesn't require an implementation of PartialOrd because we
+// never directly compare it to other Election rumors, only the individual pieces.
 impl PartialEq for Election {
     /// We ignore id in equality checking, because we only have one per service group
     fn eq(&self, other: &Election) -> bool {
@@ -211,7 +218,9 @@ impl Rumor for Election {
 
     fn expiration(&self) -> &RumorExpiration { &self.expiration }
 
-    fn expiration_as_mut(&mut self) -> &mut RumorExpiration { &mut self.expiration }
+    // This implementation is left empty on purpose. We never want to expire Elections. There can
+    // only ever be 1 Election rumor per service group, by design, so expiration isn't necessary.
+    fn expire(&mut self) {}
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -220,12 +229,13 @@ pub struct ElectionUpdate(Election);
 impl fmt::Display for ElectionUpdate {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f,
-               "ElectionUpdate m/{} sg/{}, t/{}, su/{}, st/{:?}",
+               "ElectionUpdate m/{} sg/{}, t/{}, su/{}, st/{:?} e/{}",
                self.0.member_id,
                self.0.service_group,
                self.0.term,
                self.0.suitability,
-               self.0.status)
+               self.0.status,
+               self.0.expiration)
     }
 }
 
@@ -290,7 +300,7 @@ impl Rumor for ElectionUpdate {
 
     fn expiration(&self) -> &RumorExpiration { &self.0.expiration }
 
-    fn expiration_as_mut(&mut self) -> &mut RumorExpiration { &mut self.0.expiration }
+    fn expire(&mut self) { self.0.expire() }
 }
 
 #[cfg(test)]

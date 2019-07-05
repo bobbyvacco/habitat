@@ -18,7 +18,6 @@ use serde::{ser::SerializeStruct,
             Serializer};
 use std::{cmp::Ordering,
           fmt,
-          mem,
           result,
           str::FromStr};
 use toml;
@@ -38,8 +37,8 @@ pub struct Service {
 impl fmt::Display for Service {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f,
-               "Service i/{} m/{} sg/{}",
-               self.incarnation, self.member_id, self.service_group)
+               "Service i/{} m/{} sg/{} e/{}",
+               self.incarnation, self.member_id, self.service_group, self.expiration)
     }
 }
 
@@ -77,6 +76,7 @@ impl PartialEq for Service {
         self.member_id == other.member_id
         && self.service_group == other.service_group
         && self.incarnation == other.incarnation
+        && self.expiration == other.expiration
     }
 }
 
@@ -111,7 +111,7 @@ impl Service {
                         .expect("Struct should serialize to bytes")
                           })
                           .unwrap_or_default(),
-                  expiration: RumorExpiration::forever() }
+                  expiration: RumorExpiration::default() }
     }
 }
 
@@ -160,11 +160,11 @@ impl From<Service> for newscast::Service {
 impl Rumor for Service {
     /// Follows a simple pattern; if we have a newer incarnation than the one we already have, the
     /// new one wins. So far, these never change.
-    fn merge(&mut self, mut other: Service) -> bool {
+    fn merge(&mut self, other: Service) -> bool {
         if *self >= other {
             false
         } else {
-            mem::swap(self, &mut other);
+            *self = other;
             true
         }
     }
@@ -177,7 +177,10 @@ impl Rumor for Service {
 
     fn expiration(&self) -> &RumorExpiration { &self.expiration }
 
-    fn expiration_as_mut(&mut self) -> &mut RumorExpiration { &mut self.expiration }
+    fn expire(&mut self) {
+        self.expiration.expire();
+        self.incarnation += 1;
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]

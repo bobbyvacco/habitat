@@ -571,8 +571,7 @@ mod tests {
     use crate::{census::CensusRing,
                 manager::sys::Sys};
     use habitat_butterfly::{member::MemberList,
-                            rumor::{election::{self,
-                                               Election as ElectionRumor,
+                            rumor::{election::{Election as ElectionRumor,
                                                ElectionUpdate as ElectionUpdateRumor},
                                     service::{Service as ServiceRumor,
                                               SysInfo},

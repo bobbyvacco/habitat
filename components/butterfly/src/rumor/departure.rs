@@ -25,14 +25,14 @@ pub struct Departure {
 
 impl fmt::Display for Departure {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Departure m/{}", self.member_id)
+        write!(f, "Departure m/{} e/{}", self.member_id, self.expiration)
     }
 }
 
 impl Departure {
     pub fn new(member_id: &str) -> Self {
         Departure { member_id:  member_id.to_string(),
-                    expiration: RumorExpiration::soon(), }
+                    expiration: RumorExpiration::default(), }
     }
 }
 
@@ -73,7 +73,11 @@ impl Rumor for Departure {
 
     fn expiration(&self) -> &RumorExpiration { &self.expiration }
 
-    fn expiration_as_mut(&mut self) -> &mut RumorExpiration { &mut self.expiration }
+    // This implementation is left empty on purpose. We never want to expire Departure rumors. If
+    // we did, then the mechanism provided by 'hab sup depart' for permanently banning a supervisor
+    // from the network would fail. These should likely be a small part of our overall rumor
+    // storage anyway.
+    fn expire(&mut self) {}
 }
 
 impl PartialOrd for Departure {

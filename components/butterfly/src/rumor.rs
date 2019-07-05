@@ -30,7 +30,9 @@ use crate::{error::{Error,
 use bytes::BytesMut;
 use chrono::{offset::Utc,
              DateTime,
-             Duration};
+             Datelike,
+             Duration,
+             Timelike};
 use prometheus::IntCounterVec;
 use prost::Message as ProstMessage;
 use serde::{ser::{SerializeMap,
@@ -38,15 +40,21 @@ use serde::{ser::{SerializeMap,
                   SerializeStruct},
             Serialize,
             Serializer};
-use std::{collections::{hash_map::Entry,
+use std::{cmp::{self,
+                PartialEq,
+                PartialOrd},
+          collections::{hash_map::Entry,
                         HashMap},
           default::Default,
+          fmt::{self,
+                Debug},
           ops::Deref,
           result,
           sync::{atomic::{AtomicUsize,
                           Ordering},
                  Arc,
-                 RwLock}};
+                 RwLock},
+          time};
 
 lazy_static! {
     static ref IGNORED_RUMOR_COUNT: IntCounterVec =
@@ -55,8 +63,40 @@ lazy_static! {
                                   &["rumor"]).unwrap();
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RumorExpiration(DateTime<Utc>);
+
+impl fmt::Display for RumorExpiration {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0.to_rfc3339())
+    }
+}
+
+impl Default for RumorExpiration {
+    fn default() -> RumorExpiration { Self::forever() }
+}
+
+impl PartialOrd for RumorExpiration {
+    fn partial_cmp(&self, other: &RumorExpiration) -> Option<cmp::Ordering> {
+        Some(self.0.cmp(&other.0))
+    }
+}
+
+impl PartialEq for RumorExpiration {
+    fn eq(&self, other: &RumorExpiration) -> bool {
+        // If the expiration dates are within 10 seconds of each other, consider them equal.
+        // This is an attempt to account for clock skew, since it's unlikely that rumors on
+        // different nodes will ever have expiration dates that match down to the second.
+        // Note that the cast below from u32 to i32 is safe because we know that second() returns
+        // values in the range of 0 - 60.
+        self.0.year() == other.0.year()
+        && self.0.month() == other.0.month()
+        && self.0.day() == other.0.day()
+        && self.0.hour() == other.0.hour()
+        && self.0.minute() == other.0.minute()
+        && (self.0.second() as i32 - other.0.second() as i32).abs() <= 10
+    }
+}
 
 impl RumorExpiration {
     // Some rumors we don't want to ever have naturally age out. We only want them
@@ -72,15 +112,21 @@ impl RumorExpiration {
     // don't need to keep around any more.
     pub fn soon() -> Self { RumorExpiration(Self::soon_date()) }
 
+    pub fn new(expiration: DateTime<Utc>) -> Self { Self(expiration) }
+
     pub fn expire(&mut self) { self.0 = Self::soon_date() }
 
-    fn soon_date() -> DateTime<Utc> { Utc::now() + Duration::hours(1) }
+    fn soon_date() -> DateTime<Utc> {
+        habitat_core::env_config_duration!(RumorExpirationSeconds, HAB_RUMOR_EXPIRATION_SECS => from_secs, time::Duration::from_secs(60 * 60)); // 1 hour
+        let exp_secs: time::Duration = RumorExpirationSeconds::configured_value().into();
+        Utc::now() + Duration::from_std(exp_secs).expect("Rumor Expiration seconds")
+    }
 
     pub fn for_proto(&self) -> String { self.0.to_rfc3339() }
 
     pub fn from_proto(expiration: Option<String>) -> Result<Self> {
         if expiration.is_none() {
-            return Ok(RumorExpiration::soon());
+            return Ok(RumorExpiration::default());
         }
 
         let exp = DateTime::parse_from_rfc3339(&expiration.unwrap())?;
@@ -141,14 +187,13 @@ impl RumorKey {
 
 /// A representation of a Rumor; implemented by all the concrete types we share as rumors. The
 /// exception is the Membership rumor, since it's not actually a rumor in the same vein.
-pub trait Rumor: Message<ProtoRumor> + Sized {
+pub trait Rumor: Message<ProtoRumor> + Sized + Debug {
     fn kind(&self) -> RumorType;
     fn key(&self) -> &str;
     fn id(&self) -> &str;
     fn merge(&mut self, other: Self) -> bool;
     fn expiration(&self) -> &RumorExpiration;
-    fn expiration_as_mut(&mut self) -> &mut RumorExpiration;
-    fn expire(&mut self) { self.expiration_as_mut().expire() }
+    fn expire(&mut self);
 }
 
 impl<'a, T: Rumor> From<&'a T> for RumorKey {
@@ -460,7 +505,7 @@ impl<T> RumorStore<T> where T: Rumor
             .values()
             .flat_map(HashMap::values)
             .cloned()
-            .partition(|rumor| rumor.expiration().0 < expiration_date)
+            .partition(|rumor| rumor.expiration() < &RumorExpiration::new(expiration_date))
     }
 
     pub fn expired_rumors(&self, expiration_date: DateTime<Utc>) -> Vec<T> {
@@ -473,9 +518,9 @@ impl<T> RumorStore<T> where T: Rumor
 
     /// Remove all rumors that have expired from our rumor store.
     pub fn purge_expired(&self, expiration_date: DateTime<Utc>) {
-        self.expired_rumors(expiration_date)
-            .iter()
-            .for_each(|r| self.remove(r.key(), r.id()))
+        self.expired_rumors(expiration_date).iter().for_each(|r| {
+                                                       self.remove(r.key(), r.id());
+                                                   });
     }
 
     pub fn rumor_keys(&self) -> Vec<RumorKey> {
@@ -574,26 +619,30 @@ mod tests {
                 protocol::{self,
                            newscast},
                 rumor::{Rumor,
+                        RumorExpiration,
                         RumorKey,
                         RumorType}};
 
     #[derive(Clone, Debug, Serialize)]
     struct FakeRumor {
-        pub id:  String,
-        pub key: String,
+        pub id:         String,
+        pub key:        String,
+        pub expiration: RumorExpiration,
     }
 
     impl Default for FakeRumor {
         fn default() -> FakeRumor {
-            FakeRumor { id:  format!("{}", Uuid::new_v4().to_simple_ref()),
-                        key: String::from("fakerton"), }
+            FakeRumor { id:         format!("{}", Uuid::new_v4().to_simple_ref()),
+                        key:        String::from("fakerton"),
+                        expiration: RumorExpiration::default(), }
         }
     }
 
     #[derive(Clone, Debug, Serialize)]
     struct TrumpRumor {
-        pub id:  String,
-        pub key: String,
+        pub id:         String,
+        pub key:        String,
+        pub expiration: RumorExpiration,
     }
 
     impl Rumor for FakeRumor {
@@ -604,6 +653,10 @@ mod tests {
         fn id(&self) -> &str { &self.id }
 
         fn merge(&mut self, mut _other: FakeRumor) -> bool { false }
+
+        fn expiration(&self) -> &RumorExpiration { &self.expiration }
+
+        fn expire(&mut self) {}
     }
 
     impl protocol::FromProto<newscast::Rumor> for FakeRumor {
@@ -626,8 +679,9 @@ mod tests {
 
     impl Default for TrumpRumor {
         fn default() -> TrumpRumor {
-            TrumpRumor { id:  format!("{}", Uuid::new_v4().to_simple_ref()),
-                         key: String::from("fakerton"), }
+            TrumpRumor { id:         format!("{}", Uuid::new_v4().to_simple_ref()),
+                         key:        String::from("fakerton"),
+                         expiration: RumorExpiration::default(), }
         }
     }
 
@@ -639,6 +693,10 @@ mod tests {
         fn id(&self) -> &str { &self.id }
 
         fn merge(&mut self, mut _other: TrumpRumor) -> bool { false }
+
+        fn expiration(&self) -> &RumorExpiration { &self.expiration }
+
+        fn expire(&mut self) {}
     }
 
     impl protocol::FromProto<newscast::Rumor> for TrumpRumor {

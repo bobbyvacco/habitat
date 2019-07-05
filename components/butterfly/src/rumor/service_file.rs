@@ -17,7 +17,6 @@ use habitat_core::{crypto::{keys::box_key_pair::WrappedSealedBox,
                    service::ServiceGroup};
 use std::{cmp::Ordering,
           fmt,
-          mem,
           path::Path,
           str::FromStr};
 
@@ -35,8 +34,8 @@ pub struct ServiceFile {
 impl fmt::Display for ServiceFile {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f,
-               "ServiceFile i/{} m/{} sg/{} fn/{}",
-               self.incarnation, self.from_id, self.service_group, self.filename)
+               "ServiceFile i/{} m/{} sg/{} fn/{} e/{}",
+               self.incarnation, self.from_id, self.service_group, self.filename, self.expiration)
     }
 }
 
@@ -57,6 +56,7 @@ impl PartialEq for ServiceFile {
         && self.encrypted == other.encrypted
         && self.filename == other.filename
         && self.body == other.body
+        && self.expiration == other.expiration
     }
 }
 
@@ -76,7 +76,7 @@ impl ServiceFile {
                       encrypted: false,
                       filename: filename.into(),
                       body,
-                      expiration: RumorExpiration::forever() }
+                      expiration: RumorExpiration::default() }
     }
 
     /// Encrypt the contents of the service file
@@ -143,11 +143,11 @@ impl From<ServiceFile> for newscast::ServiceFile {
 impl Rumor for ServiceFile {
     /// Follows a simple pattern; if we have a newer incarnation than the one we already have, the
     /// new one wins. So far, these never change.
-    fn merge(&mut self, mut other: ServiceFile) -> bool {
+    fn merge(&mut self, other: ServiceFile) -> bool {
         if *self >= other {
             false
         } else {
-            mem::swap(self, &mut other);
+            *self = other;
             true
         }
     }
@@ -160,7 +160,10 @@ impl Rumor for ServiceFile {
 
     fn expiration(&self) -> &RumorExpiration { &self.expiration }
 
-    fn expiration_as_mut(&mut self) -> &mut RumorExpiration { &mut self.expiration }
+    fn expire(&mut self) {
+        self.expiration.expire();
+        self.incarnation += 1;
+    }
 }
 
 #[cfg(test)]
