@@ -32,8 +32,6 @@ pub trait ElectionRumor {
     fn term(&self) -> u64;
 }
 
-pub type Term = u64;
-
 #[derive(Debug, Clone, Serialize)]
 pub struct Election {
     pub member_id:     String,
@@ -306,8 +304,7 @@ impl Rumor for ElectionUpdate {
 #[cfg(test)]
 mod tests {
     use crate::rumor::{election::{Election,
-                                  ElectionUpdate,
-                                  Term},
+                                  ElectionUpdate},
                        Rumor,
                        RumorStore};
     use habitat_core::service::ServiceGroup;
@@ -319,7 +316,7 @@ mod tests {
     fn create_election(member_id: &str, suitability: u64) -> Election {
         Election::new(member_id,
                       &ServiceGroup::new(None, "tdep", "prod", None).unwrap(),
-                      Term::default(),
+                      u64::default(),
                       suitability,
                       true /* has_quorum */)
     }
@@ -327,7 +324,7 @@ mod tests {
     fn create_election_update(member_id: &str, suitability: u64) -> ElectionUpdate {
         ElectionUpdate::new(member_id,
                             &ServiceGroup::new(None, "tdep", "prod", None).unwrap(),
-                            Term::default(),
+                            u64::default(),
                             suitability,
                             true /* has_quorum */)
     }

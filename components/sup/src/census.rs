@@ -811,7 +811,7 @@ mod tests {
         let election_store: RumorStore<ElectionRumor> = RumorStore::default();
         let mut election = ElectionRumor::new("member-a",
                                               &sg_one,
-                                              election::Term::default(),
+                                              u64::default(),
                                               10,
                                               true /* has_quorum */);
         election.finish();
@@ -820,7 +820,7 @@ mod tests {
         let election_update_store: RumorStore<ElectionUpdateRumor> = RumorStore::default();
         let mut election_update = ElectionUpdateRumor::new("member-b",
                                                            &sg_two,
-                                                           election::Term::default(),
+                                                           u64::default(),
                                                            10,
                                                            true /* has_quorum */);
         election_update.finish();
