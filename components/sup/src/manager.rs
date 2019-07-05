@@ -1337,7 +1337,7 @@ impl Manager {
                         -> impl Future<Item = (), Error = ()> {
         let incarnation = self.incarnation_for_service(&service);
         self.butterfly
-            .mark_service_for_deletion(service.to_rumor(incarnation));
+            .mark_service_for_deletion(&service.to_rumor(incarnation));
         Self::service_stop_future(service,
                                   shutdown_config,
                                   Arc::clone(&self.user_config_watcher),

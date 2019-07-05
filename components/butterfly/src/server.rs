@@ -637,7 +637,7 @@ impl Server {
 
     /// Mark a service for deletion. This means butterfly will mark the Service, ServiceConfig and
     /// ServiceFile rumors related to this service as expired. They will eventually be purged.
-    pub fn mark_service_for_deletion(&self, service: Service) {
+    pub fn mark_service_for_deletion(&self, service: &Service) {
         self.service_store.expire_all_for_key(service.key());
         self.service_config_store.expire_all_for_key(service.key());
         self.service_file_store.expire_all_for_key(service.key());
@@ -676,15 +676,16 @@ impl Server {
         let inserting_new_group_member =
             service_store.contains_group_without_member(service_group, member_id);
 
-        if service_store.insert(service) {
-            if inserting_new_group_member && !check_quorum(service_group) {
-                if let Some(member_id_to_depart) =
-                    service_store.min_member_id_with(service_group, |id| {
-                                     member_list.health_of_by_id_mlr(id) == Some(Health::Confirmed)
-                                 })
-                {
-                    member_list.set_departed_mlw(&member_id_to_depart);
-                }
+        if service_store.insert(service)
+           && inserting_new_group_member
+           && !check_quorum(service_group)
+        {
+            if let Some(member_id_to_depart) =
+                service_store.min_member_id_with(service_group, |id| {
+                                 member_list.health_of_by_id_mlr(id) == Some(Health::Confirmed)
+                             })
+            {
+                member_list.set_departed_mlw(&member_id_to_depart);
             }
         }
     }

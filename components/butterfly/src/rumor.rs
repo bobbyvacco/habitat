@@ -532,7 +532,7 @@ impl<T> RumorStore<T> where T: Rumor
 
     pub fn expire_all_for_key(&self, key: &str) {
         if let Some(m) = self.write_entries().get_mut(key) {
-            m.values_mut().for_each(|r| r.expire());
+            m.values_mut().for_each(Rumor::expire);
         }
     }
 }
