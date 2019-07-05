@@ -549,12 +549,10 @@ impl Server {
     /// * `MemberList::entries` (write) This method must not be called while any MemberList::entries
     ///   lock is held.
     pub fn insert_member_mlw(&self, member: Member, health: Health) {
-        // NOTE: This sucks so much right here. Check out how we allocate no matter what, because
-        // of just how the logic goes. The value of the trace is really high, though, so we deal
-        // with it as best we can, with our head held high.
         let member_id = member.id.clone();
         let trace_incarnation = member.incarnation;
         let trace_health = health;
+
         if self.member_list.insert_mlw(member, health) {
             trace_it!(MEMBERSHIP: self,
                       TraceKind::MemberUpdate,
@@ -588,13 +586,6 @@ impl Server {
             }
 
             let check_list = self.member_list.check_list_mlr(&self.member_id);
-
-            // TODO (CM): Even though we marked the rumor as hot
-            // above, when we gossip, we send out the 5 "coolest but
-            // still warm" rumors. Sending to 10 members increases the
-            // chances that we'll get to this hot one now, but I don't
-            // think that we can strictly guarantee that this
-            // departure health update actually gets out in all cases.
             for member in check_list.iter().take(SELF_DEPARTURE_RUMOR_FANOUT) {
                 let addr = member.swim_socket_address();
                 // Safe because we checked above
@@ -630,9 +621,7 @@ impl Server {
                 health = Health::Alive;
             }
         }
-        // NOTE: This sucks so much right here. Check out how we allocate no matter what, because
-        // of just how the logic goes. The value of the trace is really high, though, so we carry
-        // on, knowing life is still worth living.
+
         let member_id = member.id.clone();
         let trace_incarnation = member.incarnation;
         let trace_health = health;

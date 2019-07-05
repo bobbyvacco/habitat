@@ -9,8 +9,6 @@ use habitat_common::liveliness_checker;
 use std::{thread,
           time::Duration};
 
-const LOOP_DELAY_MS: u64 = 500;
-
 pub fn spawn_thread(name: String, server: Server, timing: Timing) -> std::io::Result<()> {
     thread::Builder::new().name(name)
                           .spawn(move || -> ! { run_loop(&server, &timing) })
@@ -18,6 +16,9 @@ pub fn spawn_thread(name: String, server: Server, timing: Timing) -> std::io::Re
 }
 
 fn run_loop(server: &Server, timing: &Timing) -> ! {
+    habitat_core::env_config_duration!(ExpireThreadSleepMillis, HAB_EXPIRE_THREAD_SLEEP_MS => from_millis, Duration::from_millis(500));
+    let sleep_ms: Duration = ExpireThreadSleepMillis::configured_value().into();
+
     loop {
         liveliness_checker::mark_thread_alive().and_divergent();
 
@@ -36,6 +37,6 @@ fn run_loop(server: &Server, timing: &Timing) -> ! {
         server.service_file_store.purge_expired(now);
         server.member_list.purge_expired_mlw(now);
 
-        thread::sleep(Duration::from_millis(LOOP_DELAY_MS));
+        thread::sleep(sleep_ms);
     }
 }
