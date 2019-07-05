@@ -37,8 +37,12 @@ x-service: &srv
     - HAB_LAUNCH_BINARY=/bin/hab-launch
     - HAB_LAUNCH_NO_SUP_VERSION_CHECK=1
     - HAB_LICENSE=accept-no-persist
-    - RUST_LOG=info,rustc_metadata=error,cargo=error,jobserver=error,rustc_trans=error,rustc_driver=error,rustc_mir=error,rustc=error,tokio_core=info,habitat_butterfly::rumor=debug,habitat_butterfly::server::expire=debug,habitat_butterfly::server=debug,habitat_sup::manager=debug
+    - RUST_LOG=info,rustc_metadata=error,cargo=error,rustc_trans=error,rustc_driver=error,rustc_mir=error,rustc=error,tokio_core=info,habitat_butterfly::server::expire=debug,habitat_butterfly::server::push=info,habitat_butterfly::member=debug,habitat_sup::manager=debug
     - PATH=/bin:/usr/bin
+    - HAB_PERSIST_LOOP_PERIOD_SECS=4
+    - HAB_EXPIRE_THREAD_SLEEP_MS=1000
+    - HAB_RUMOR_EXPIRATION_SECS=20
+    - HAB_FEAT_TRIGGER_ELECTION=1
 
 services:
   bastion:

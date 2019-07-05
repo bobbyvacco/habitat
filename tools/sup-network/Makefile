@@ -1,6 +1,6 @@
 HAB_SUP_TEST_NETWORK_PEER_NAME := peer_1
 
-up: build CTL_SECRET
+up: down build CTL_SECRET
 	docker build -t hab-sup-network .
 	docker-compose up -d
 
