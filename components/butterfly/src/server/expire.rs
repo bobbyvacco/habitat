@@ -34,6 +34,7 @@ fn run_loop(server: &Server, timing: &Timing) -> ! {
         server.service_store.purge_expired(now);
         server.service_config_store.purge_expired(now);
         server.service_file_store.purge_expired(now);
+        server.member_list.purge_expired_mlw(now);
 
         thread::sleep(Duration::from_millis(LOOP_DELAY_MS));
     }

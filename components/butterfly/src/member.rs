@@ -7,9 +7,12 @@ use crate::{error::{Error,
                        newscast,
                        swim as proto,
                        FromProto},
-            rumor::{RumorKey,
+            rumor::{RumorExpiration,
+                    RumorKey,
                     RumorPayload,
                     RumorType}};
+use chrono::{offset::Utc,
+             DateTime};
 use habitat_common::sync::{Lock,
                            ReadGuard,
                            WriteGuard};
@@ -136,6 +139,7 @@ pub struct Member {
     pub gossip_port: u16,
     pub persistent:  bool,
     pub departed:    bool,
+    pub expiration:  RumorExpiration,
 }
 
 impl Member {
@@ -154,6 +158,12 @@ impl Member {
             }
         }
     }
+
+    pub fn expire(&mut self) { self.expiration = RumorExpiration::soon(); }
+
+    pub fn expired(&self, expiration_date: DateTime<Utc>) -> bool {
+        RumorExpiration::new(expiration_date) > self.expiration
+    }
 }
 
 impl Default for Member {
@@ -169,7 +179,8 @@ impl Default for Member {
                  swim_port:   0,
                  gossip_port: 0,
                  persistent:  false,
-                 departed:    false, }
+                 departed:    false,
+                 expiration:  RumorExpiration::default(), }
     }
 }
 
@@ -187,13 +198,15 @@ impl<'a> From<&'a &'a Member> for RumorKey {
 
 impl From<Member> for proto::Member {
     fn from(value: Member) -> Self {
+        let exp = value.expiration.for_proto();
         proto::Member { id:          Some(value.id),
                         incarnation: Some(value.incarnation.to_u64()),
                         address:     Some(value.address),
                         swim_port:   Some(value.swim_port.into()),
                         gossip_port: Some(value.gossip_port.into()),
                         persistent:  Some(value.persistent),
-                        departed:    Some(value.departed), }
+                        departed:    Some(value.departed),
+                        expiration:  Some(exp), }
     }
 }
 
@@ -206,7 +219,7 @@ pub struct Membership {
 impl fmt::Display for Membership {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f,
-               "Member i/{} m/{} ad/{} sp/{} gp/{} p/{} d/{} h/{:?}",
+               "Member i/{} m/{} ad/{} sp/{} gp/{} p/{} d/{} e/{} h/{:?}",
                self.member.incarnation,
                self.member.id,
                self.member.address,
@@ -214,6 +227,7 @@ impl fmt::Display for Membership {
                self.member.gossip_port,
                self.member.persistent,
                self.member.departed,
+               self.member.expiration,
                self.health)
     }
 }
@@ -254,7 +268,8 @@ fn as_port(x: i32) -> Option<u16> {
 
 impl FromProto<proto::Member> for Member {
     fn from_proto(proto: proto::Member) -> Result<Self> {
-        Ok(Member { id:          proto.id.ok_or(Error::ProtocolMismatch("id"))?,
+        let expiration = RumorExpiration::from_proto(proto.expiration)?;
+        Ok(Member { id: proto.id.ok_or(Error::ProtocolMismatch("id"))?,
                     incarnation: proto.incarnation
                                       .map_or_else(Incarnation::default, Incarnation::from),
 
@@ -297,14 +312,15 @@ impl FromProto<proto::Member> for Member {
                     // two uses of our Member protobuf, or both.
                     address: proto.address.unwrap_or_default(),
 
-                    swim_port:   proto.swim_port
-                                      .and_then(as_port)
-                                      .ok_or(Error::ProtocolMismatch("swim-port"))?,
+                    swim_port: proto.swim_port
+                                    .and_then(as_port)
+                                    .ok_or(Error::ProtocolMismatch("swim-port"))?,
                     gossip_port: proto.gossip_port
                                       .and_then(as_port)
                                       .ok_or(Error::ProtocolMismatch("gossip-port"))?,
-                    persistent:  proto.persistent.unwrap_or(false),
-                    departed:    proto.departed.unwrap_or(false), })
+                    persistent: proto.persistent.unwrap_or(false),
+                    departed: proto.departed.unwrap_or(false),
+                    expiration })
     }
 }
 
@@ -804,12 +820,17 @@ impl MemberList {
             self.write_entries()
                 .iter_mut()
                 .filter_map(|(id, v)| {
-                    let member_list::Entry { health,
-                                             health_updated_at,
-                                             .. } = v;
+                    let member_list::Entry { member,
+                                             health,
+                                             health_updated_at, } = v;
                     if *health == precursor_health && now >= *health_updated_at + timeout {
                         *health = expiring_to;
                         *health_updated_at = now;
+
+                        if expiring_to == Health::Departed {
+                            member.expire();
+                        }
+
                         Some(id.clone())
                     } else {
                         None
@@ -836,6 +857,11 @@ impl MemberList {
             .values()
             .map(|member_list::Entry { member, .. }| RumorKey::from(member))
             .collect()
+    }
+
+    pub fn purge_expired_mlw(&self, expiration_date: DateTime<Utc>) {
+        self.write_entries()
+            .retain(|_, v| !v.member.expired(expiration_date));
     }
 }
 
