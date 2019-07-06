@@ -38,7 +38,7 @@ Chef Habitat artifacts are identified using a four-part fully-qualified package 
 
 When referring to Chef Habitat artifacts from either Builder or the Studio, you can refer to them in two ways:
 
-- With a Chef Habitat package identifier 
+- With a Chef Habitat package identifier
 - With a fully-qualified Chef Habitat package identifier
 
 Chef Habitat package identifier
@@ -57,7 +57,7 @@ If the Chef Habitat artifact identifier isn't fully qualified (having fewer than
 
 ## Chef Habitat Artifact Export Formats
 
-Chef Habitat `.hart` files can be exported in a number of different formats depending on what you need and where you need it. This is powerful because you can use the same immutable Chef Habitat artifact by exporting it into a format that you need for a specific job. For example, when you can use one format for iterating locally in a Docker container, another to deploy that Chef Habitat artifact to an environment running Kubernetes, and a third to deploy it to a data center that's running virtual machines, but the Chef Habitat artifact is identical in each location---it's simply exported to the correct format for the job you are trying to do. 
+Chef Habitat `.hart` files can be exported in a number of different formats depending on what you need and where you need it. This is powerful because you can use the same immutable Chef Habitat artifact by exporting it into a format that you need for a specific job. For example, when you can use one format for iterating locally in a Docker container, another to deploy that Chef Habitat artifact to an environment running Kubernetes, and a third to deploy it to a data center that's running virtual machines, but the Chef Habitat artifact is identical in each location---it's simply exported to the correct format for the job you are trying to do.
 
 You can read more about how to export Chef Habitat artifacts, and what exporters are currently available, [here](/docs/developing-packages/#pkg-exports).
 
@@ -77,8 +77,8 @@ The Depot is a searchable repository that stores artifacts for use in Chef Habit
 ---
 ## <a name="glossary-hab" id="glossary-hab" data-magellan-target="glossary-hab" type="anchor">Hab</a>
 
-Almost anything you could want to do in Chef Habitat can be managed via the `hab` CLI. 
-    
+Almost anything you could want to do in Chef Habitat can be managed via the `hab` CLI.
+
 It includes subcommands for executing package builds, loading services into the process Supervisor, uploading packages to Builder, and entering the Studio. For more information on all of the functionality of `hab` checkout our [CLI command documentation](/docs/habitat-cli).
 
 ---
@@ -97,7 +97,7 @@ Chef Habitat's Launcher is a sidecar process for the Supervisor which provides a
 
 To update your Launchers, run:
 
-```shell
+```bash
 hab pkg install core/hab-launcher
 ```
 
@@ -151,7 +151,7 @@ A Supervisor network can be optionally set up to encrypt *all* supervisor-to-sup
 
 A plan is a set of files that describe how to build a Chef Habitat package. At the heart of the plan is a configurable script named `plan.sh` for Linux and `plan.ps1` for Windows, containing instructions on how to download, compile, and install its software.
 
-Chef Habitat's build phase defaults can be overidden using [callbacks](/docs/reference/#reference-callbacks). [Application lifecycle hooks](/docs/reference/#reference-hooks) for services can be defined so the Supervisor running your services takes specific actions in response to specific lifecycle events. Optionally included are a set of TOML variables and their defaults that can be used to generate configuration files via [Handlebar.js templates](/docs/reference/#handlebars-helpers). 
+Chef Habitat's build phase defaults can be overidden using [callbacks](/docs/reference/#reference-callbacks). [Application lifecycle hooks](/docs/reference/#reference-hooks) for services can be defined so the Supervisor running your services takes specific actions in response to specific lifecycle events. Optionally included are a set of TOML variables and their defaults that can be used to generate configuration files via [Handlebar.js templates](/docs/reference/#handlebars-helpers).
 
 ---
 ## <a name="glossary-scaffolding" id="glossary-scaffolding" data-magellan-target="glossary-scaffolding" type="anchor">Scaffolding</a>
@@ -168,7 +168,7 @@ While we are targeting many platforms for automated scaffolding we currently sup
 
 ## Variables
 
-Scaffoldings provide certain overrideable variables for language-specific behavior.  Please see the appropriate scaffolding documentation for details.
+Scaffoldings provide certain overrideable variables for language-specific behavior. Please see the appropriate scaffolding documentation for details.
 
 ## Overriding Scaffolding Callbacks
 

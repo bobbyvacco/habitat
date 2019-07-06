@@ -1,8 +1,9 @@
-<!-- This is a generated file, do not edit it directly. See https://github.com/habitat-sh/habitat/blob/master/www/scripts/generate-cli-docs.js -->
- ---
-title: Chef Habitat Docs - hab CLI Reference
-draft: false
 ---
+title: Chef Habitat Docs - hab CLI Reference
+---
+
+<!-- This is a generated file, do not edit it directly. See https://github.com/habitat-sh/habitat/blob/master/www/scripts/generate-cli-docs.js -->
+
 
 # Chef Habitat Command-Line Interface (CLI) Reference
 
@@ -2008,7 +2009,7 @@ hab plan render [FLAGS] [OPTIONS] <TEMPLATE_PATH>
 ```
 -n, --no-render    Don't write anything to disk, ignores --render-dir
 -p, --print        Prints config to STDOUT
--q, --quiet        Don't print any helper messages.  When used with --print will only print config file
+-q, --quiet        Don't print any helper messages. When used with --print will only print config file
 -h, --help         Prints help information
 -V, --version      Prints version information
 ```

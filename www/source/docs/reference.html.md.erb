@@ -1,9 +1,7 @@
 ---
 title: Reference Overview
 ---
-# <a name="reference" id="reference" data-magellan-target="reference">Working with Builder</a>
-
-# Chef Habitat Reference and Syntax
+# <a name="reference" id="reference" data-magellan-target="reference">Chef Habitat Reference and Syntax</a>
 
 When defining a package in Chef Habitat, there are different files, settings, variables, and functions that you can use to set up specific installation and configuration details. You have a great deal of flexibility in how you build and define your application.
 
@@ -67,7 +65,7 @@ This is a list of all environment variables that can be used to modify the opera
 ### Customizing Studio
 
 When you enter a Studio, Chef Habitat will attempt to locate `/src/.studiorc` and
-source it.  Think `~/.bashrc`. This file can be used to export any
+source it. Think `~/.bashrc`. This file can be used to export any
 environment variables like the ones you see above as well as any other shell
 customizations to help you develop your plans from within the Studio.
 
@@ -78,6 +76,7 @@ Note that a `.studiorc` will only be source when using `hab studio enter`--it wi
 
 ---
 ## <a name="plan-settings" id="plan-settings" data-magellan-target="plan-settings">Plan settings</a>
+
 The following settings are defined at the beginning of your plan. They specify basic information about your plan such as name, version, and dependencies.
 
 > **Note**: We are using Bash syntax here, but Powershell plans use the same variable names and should conform to standard Powershell language rules (ie. `$` before variable names and quoting string values).
@@ -136,7 +135,7 @@ pkg_filename=${pkg_name}-${pkg_version}.tar.gz
 ```
 
 **pkg_shasum**
-: _Required_ if a valid URL is provided for `pkg_source` or unless **do_verify()** is overridden. The value for `pkg_shasum` is a sha-256 sum of the downloaded `pkg_source`. 
+: _Required_ if a valid URL is provided for `pkg_source` or unless **do_verify()** is overridden. The value for `pkg_shasum` is a sha-256 sum of the downloaded `pkg_source`.
 
 If you do not have the checksum, you can easily generate it by downloading the source and using the `sha256sum` or `gsha256sum` tools. Also, if you do not have **do_verify()** overridden, and you do not have the correct sha-256 sum, then the expected value will be shown in the build output of your package.
 
@@ -246,7 +245,7 @@ pkg_binds_optional=(
 ```
 
 **pkg_interpreters**
-: _Optional_. An array of interpreters used in [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) lines for scripts. Specify the subdirectory where the binary is relative to the package, for example, `bin/bash` or `libexec/neverland`, since binaries can be located in directories besides `bin`. This list of interpreters will be written to the metadata INTERPRETERS file, located inside a package, with their fully-qualified path.  Then these can be used with the fix_interpreter function. For more information on declaring shebangs in Chef Habitat, see [Plan hooks](#hooks), and for more information on the fix_interpreter function, see [Plan utility functions](#plan-utility-functions).
+: _Optional_. An array of interpreters used in [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) lines for scripts. Specify the subdirectory where the binary is relative to the package, for example, `bin/bash` or `libexec/neverland`, since binaries can be located in directories besides `bin`. This list of interpreters will be written to the metadata INTERPRETERS file, located inside a package, with their fully-qualified path. Then these can be used with the fix_interpreter function. For more information on declaring shebangs in Chef Habitat, see [Plan hooks](#hooks), and for more information on the fix_interpreter function, see [Plan utility functions](#plan-utility-functions).
 
 ```bash
 pkg_interpreters=(bin/bash)
@@ -306,6 +305,7 @@ pkg_upstream_url=https://github.com/myrepo
 
 ---
 ## <a name="plan-variables" id="plan-variables" data-magellan-target="plan-variables">Plan Variables</a>
+
 The following variables can be used in your plans to help get binaries and libraries to build and install in the correct locations in your package.
 
 **$pkg_prefix**
@@ -361,6 +361,7 @@ The following variables can be used in your plans to help get binaries and libra
 
 ---
 ## <a name="utility-functions" id="utility-functions" data-magellan-target="utility-functions">Plan Helper Functions</a>
+
 The following helper functions can be useful in your plan to help you build your package correctly. Attach() specifically is to help with debugging - the other helper functions are to help you in building your package.
 
 > **Note**: Most of the following helper functions are not available in Powershell plans (`plan.ps1`). However in most cases, the standard Powershell cmdlets provide the same functionality. For example: use `Resolve-Path` instead of `abspath` or `Get-Command` instead of `exists`.
@@ -475,7 +476,7 @@ do_before() {
 }
 ```
 
-```powershell
+```PS
 function pkg_version {
   Get-Content "$SRC_PATH/version.txt"
 }
@@ -510,7 +511,7 @@ do_download() {
 }
 ```
 
-```powershell
+```PS
 function pkg_version {
   # Extract the build date of the certificates file
   $matchStr = "### Certificate data from Mozilla as of: "
@@ -558,17 +559,17 @@ debug "Only if things are set"
 ```
 
 **exit_with()**
-: `plan.sh` only.  Exits the program with an error message and a status code.
+: `plan.sh` only. Exits the program with an error message and a status code.
 
 ```bash
 exit_with "Something bad happened" 55
 ```
 
 **trim()**
-: `plan.sh` only.  Trims leading and trailing whitespace characters from a bash variable.
+: `plan.sh` only. Trims leading and trailing whitespace characters from a bash variable.
 
 **record()**
-: `plan.sh` only.  Takes a session name and command to run as arguments function appends a timestamp to the log file. Alternative to piping build through tee.
+: `plan.sh` only. Takes a session name and command to run as arguments function appends a timestamp to the log file. Alternative to piping build through tee.
 
 ```bash
 # Usage: record <SESSION> [CMD [ARG ...]]
@@ -577,6 +578,7 @@ record mysoftware build /src/mysoftware
 
 ---
 ## <a name="reference-callbacks" id="reference-callbacks" data-magellan-target="reference-callbacks">Build Phase Callbacks</a>
+
 When defining your plan, you can override the default behavior of Chef Habitat in each build phase through a callback. To define a callback, simply create a shell function of the same name in your plan file and then write your script. If you do not want to use the default callback behavior, you must override the callback and `return 0` in the function definition or simply provide no implementation in a `plan.ps1`.
 
 These callbacks are listed in the order that they executed by the package build script.
@@ -594,17 +596,17 @@ Additionally, <a href="/docs/reference/#utility-functions">plan helper functions
 : There is an empty default implementation of this callback.
 
 **do_setup_environment()/Invoke-SetupEnvironment**
-: Use this to declare buildtime and runtime environment variables that overwrite or are in addition to the default environment variables created by Chef Habitat during the build process. Examples of common environment variables you might wish to add or modify are those such as `JAVA_HOME` or `GEM_PATH`. 
+: Use this to declare buildtime and runtime environment variables that overwrite or are in addition to the default environment variables created by Chef Habitat during the build process. Examples of common environment variables you might wish to add or modify are those such as `JAVA_HOME` or `GEM_PATH`.
 
 > **Note** You do not have to override this callback if you do not wish to modify your environment variables. The build system will always set up your environment according to your dependencies. For example, it will ensure that dependency binaries are always present on your `PATH` variable, and so on.
 
-Runtime environments of dependencies are layered together in the order they are declared in your `pkg_deps` array, followed by modifications made in this callback. In turn, these computed values will be made available to packages that use the current package as a dependency, and so on. 
+Runtime environments of dependencies are layered together in the order they are declared in your `pkg_deps` array, followed by modifications made in this callback. In turn, these computed values will be made available to packages that use the current package as a dependency, and so on.
 
 The buildtime environment is assembled by processing the *runtime* environments of your `pkg_build_deps` dependencies (because they will be running in your build) in a similar manner. The final environment in which your package will be built consists of:
 
 * The system environment of your Studio as the base layer
 * The assembled runtime environment of your package on top of the base
-* Any buildtime environment information on top of the assembled runtime environment 
+* Any buildtime environment information on top of the assembled runtime environment
 
 Only the runtime portion of this combined buildtime environment is made available to your package when it is running in a Supervisor (or when it is being used as a dependency of another Chef Habitat package).
 
@@ -617,7 +619,7 @@ set_buildtime_env [-f] VARIABLE_NAME VALUE
 ```
 
 Powershell:
-```powershell
+```PS
 Set-RuntimeEnv VARIABLE_NAME VALUE [-force]
 Set-BuildtimeEnv VARIABLE_NAME VALUE [-force]
 ```
@@ -632,7 +634,7 @@ push_runtime_env VARIABLE_NAME VALUE
 push_buildtime_env VARIABLE_NAME VALUE
 ```
 Powershell:
-```powershell
+```PS
 Push-RuntimeEnv VARIABLE_NAME VALUE
 Push-BuildtimeEnv VARIABLE_NAME VALUE
 ```
@@ -645,12 +647,12 @@ Bash:
 ```bash
 export HAB_ENV_FOO_TYPE=aggregate
 ```
- 
+
 Powershell:
-```powershell
+```PS
 $env:HAB_ENV_FOO_TYPE="aggregate"
 ```
- 
+
 Similarly, Chef Habitat defaults to using the colon (`:`) as a separator for aggregate variables on Linux. If the hypothetical `FOO` variable uses a semicolon (`;`) as a separator instead, then you must add `export HAB_ENV_FOO_SEPARATOR=;` at the top level of the plan. On Windows, `;` is the default separator.
 
 In all cases, when Chef Habitat is assuming a default strategy, it will emit log messages to notify you of that along with instructions on how to change the behavior.
@@ -773,7 +775,8 @@ Delegates most of the implementation to the `do_default_build_server()` function
 : `plan.sh` only. A function that is called at the absolute end of a failed build process. This can be used to provide integration points with external systems, among other things, particularly if you are not using Builder (a Notifications feature is coming to Builder in H2 2018). The result of this callback cannot affect the disposition of the overall build; once the build has failed, it's failed. Keep in mind that since a build could potentially fail at any time, certain variables or data structures may not be present or initialized when this callback is called, so code accordingly.
 
 ---
-## <a name="reference-hooks" id="reference-hooks" data-magellan-target="reference-hooks">Hooks</a>
+## <a name="reference-hooks" id="reference-hooks" data-magellan-target="reference-hooks">Application Lifecycle Hooks</a>
+
 Each plan can specify lifecycle event handlers, or hooks, to perform certain actions during a service's runtime. Each hook is a script with a [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) defined at the top to specify the interpreter to be used. On Windows, Powershell Core is the only interpreter ever used.
 
 To define a hook, simply create a bash file of the same name in `/my_plan_name/hooks/`, for example, `/postgresql/hooks/health-check`.
@@ -826,7 +829,7 @@ exit $rc
 : File location `<plan>/hooks/init`. This hook is run when a Chef Habitat topology starts.
 
 **install**
-: File location `<plan>/hooks/install`. This hook is run when a package is initially installed. 
+: File location `<plan>/hooks/install`. This hook is run when a package is initially installed.
 
 An `install` hook may be triggered by `hab pkg install` or by a Supervisor loading a new package. Note that any package can define an `install` hook and it is not limited to packages that are loaded as services into a Supervisor. A package may have dependencies defined in `pkg_deps` or `pkg_build_deps` that define their own `install` hook. An `install` hook defined in an dependant package that has not yet been installed will run when the parent package is installed. However `install` hooks in a runtime dependency (`pkg_deps`) will not run when loaded via a package `build` inside of a Studio.
 
@@ -884,7 +887,7 @@ exec my_command --option {{cfg.option}} --option2 {{cfg.option2}}
 ---
 ## <a name="helpers" id="helpers" data-magellan-target="helpers" class="anchor">Handlebars Helpers</a>
 
-Chef Habitat allows you to use [Handlebars-based](http://handlebarsjs.com) tuneables in your plan, and you can also use both built-in Handlebars helpers and Chef Habitat-specific helpers in defining your configuration logic. 
+Chef Habitat allows you to use [Handlebars-based](http://handlebarsjs.com) tuneables in your plan, and you can also use both built-in Handlebars helpers and Chef Habitat-specific helpers in defining your configuration logic.
 
 - [Built-in Helpers](#builtin-helpers)
 - [Chef Habitat Helpers](#habitat-helpers)
@@ -997,7 +1000,7 @@ And for both **each** and **unless**, you can use `@first` and `@last` to specif
 
     {{#eachAlive bind.servers.members as |member| ~}}
       "{{member.sys.ip}}"
-      {{#unless @last ~}}, {{/unless ~}} 
+      {{#unless @last ~}}, {{/unless ~}}
     {{/eachAlive ~}}]
 
 ### <a name="habitat-helpers" id="habitat-helpers" data-magellan-target="habitat-helpers" class="anchor">Chef Habitat Helpers</a>
@@ -1167,6 +1170,7 @@ You cannot concatenate an object (e.g. `{{strConcat web}}`), but you could conca
 
 ---
 ## <a name="template-data" id="template-data" data-magellan-target="template-data">Template Data</a>
+
 The following settings can be used during a Chef Habitat service's lifecycle. This means that you can use these settings in any of the plan hooks, such as `init`, or `run`, and also in any templatized configuration file for your application or service.
 
 These configuration settings are referenced using the [Handlebars.js](https://github.com/wycats/handlebars.js/) version of [Mustache-style](https://mustache.github.io/mustache.5.html) tags.
@@ -1298,10 +1302,13 @@ Represents a member of a service group
 | environment | string | The environment portion of a service group specification. Unused at this time. |
 
 ---
-## <a name="package-contents" id="package-contents" data-magellan-target="package-contents">Contents of a Chef Habitat package</a>
+## <a name="package-contents" id="package-contents" data-magellan-target="package-contents">Package Contents</a>
+
 During the build process, the hab-plan-build script creates several files that specify dependency, build, and configuration information. When packages are unpacked (extracted) and installed during the initialization phase of a Chef Habitat service, these files define what those packages need to run.
 
 Packages are installed in the `/hab/pkgs/` directory, and then further organized in subdirectories corresponding to fully-qualified package identifiers: `origin/name/version/release`. For more information on package identifiers, see [Packages](/docs/glossary/#glossary-artifacts).
+
+### Contents of a Chef Habitat package
 
 **BUILD_DEPS**
 : Fully-qualified package identifiers of any build dependencies that your package depends on. These are listed in the root plan.sh file of your plan directory.
@@ -1376,11 +1383,11 @@ Packages are installed in the `/hab/pkgs/` directory, and then further organized
 : If you have defined a `hooks` subdirectory with hook scripts in your plan, then they will be included in the same relative location within the installed package directory. Read more about [Application Lifecycle hooks](/docs/reference/#reference-hooks).
 
 ---
-## <a name="sup-log-configuration" id="sup-log-configuration" data-magellan-target="sup-log-configuration">Chef Habitat Supervisor Log Configuration Reference</a>
+## <a name="sup-log-configuration" id="sup-log-configuration" data-magellan-target="sup-log-configuration">Supervisor Log Configuration Reference</a>
 
-With the 0.83.0 release of the Habitat Supervisor, it is possible to have greater control over logging output, including the ability to dynamically adjust the logging configuration of a running Supervisor. There are two main ways of configuring logging, each of which has their own strengths and weaknesses: using environment variables, and using a configuration file.
+With the 0.83.0 release of the Chef Habitat Supervisor, it is possible to have greater control over logging output, including the ability to dynamically adjust the logging configuration of a running Supervisor. There are two main ways of configuring logging, each of which has their own strengths and weaknesses: using environment variables, and using a configuration file.
 
-### Environment variable Configuration
+### Environment variable configuration
 
 It is still possible to configure logging via the `RUST_LOG` environment variable. This approach is often useful for quickly re-configuring logging (requiring a restart), or for easily configuring logging in container-based deployments.
 
@@ -1402,7 +1409,7 @@ Note that Rust modules are identified first by the crate (or library) they come 
 
 #### Combinations of the above
 
-Multiple logging specifiers can be submitted, separated by commas. A simple logging level will act as the default, with additional module-targeted levels serving to refine the logging for the target code. If you supply multiple simple logging levels, only the last one will count.  Any number of targeted logging levels are allowed, however.
+Multiple logging specifiers can be submitted, separated by commas. A simple logging level will act as the default, with additional module-targeted levels serving to refine the logging for the target code. If you supply multiple simple logging levels, only the last one will count. Any number of targeted logging levels are allowed, however.
 
 For example, `RUST_LOG=info,habitat_sup::manager=debug,tokio_reactor=error` will limit logs generally to the `info` level, while additionally allowing `debug` messages coming from the `habitat_sup::manager` module hierarchy, and restricting log messages from the `tokio_reactor` library to only `error`.
 
@@ -1455,7 +1462,7 @@ Here, `loggers` is a map of maps. Map keys are module paths (as described above 
 Users are encouraged to read the [log4rs configuration documentation](https://docs.rs/log4rs/0.8.3/log4rs/#configuration) for further details.
 
 ---
-## <a name="sup-log-keys" id="sup-log-keys" data-magellan-target="sup-log-keys">Chef Habitat Supervisor Log Key Reference</a>
+## <a name="sup-log-keys" id="sup-log-keys" data-magellan-target="sup-log-keys">Supervisor Log Key</a>
 
 When running services with the Chef Habitat Supervisor you'll see log output similar
 to this:

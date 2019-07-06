@@ -2,9 +2,9 @@
 title: Chef Habitat Docs - Best Practice Guides
 description: Documentation for using Chef Habitat Builder with other services such as Kubernetes, OpenShift, Amazon ECS, Mesos, pure Docker, and more.
 ---
-# Chef Habitat Best Practice Guides
-This chapter covers recommended best practices for runtime and buildtime.
+# <a name="best-practices" id="best-practices" data-magellan-target="best-practices">Chef Habitat Best Practice Guides</a>
 
+This chapter covers recommended best practices for runtime and buildtime.
 We focus on best practices for packages that use Chef Habitat Builder for continuous builds.
 
 ## Table of Contents
@@ -29,20 +29,18 @@ Chef Habitat can be run on bare metal servers, as well as virtual machines. Curr
 
 ### Running Chef Habitat on Linux
 
-#### Prerequisites
-
 First, you must [install Chef Habitat](docs/install-habitat) itself on the machine.
 
 Second, many packages default to running as the `hab` user, so you should ensure that both a `hab` user and group exist:
 
-```shell
+```bash
 sudo groupadd hab
 sudo useradd -g hab hab
 ```
 
 Finally, you will need to wire Chef Habitat up to your systems init system. This may be SysVinit, SystemD, runit, etc. The details will be different for each system, but in the end, you must call `hab sup run`.
 
-### Running under SystemD
+#### Running under SystemD
 
 A basic SystemD unit file for Chef Habitat might look like this. This assumes that you have already created the `hab` user and group, as instructed above, and that your `hab` binary is linked to `/bin/hab`.
 
@@ -63,11 +61,11 @@ As with Linux, you must first [install Chef Habitat](docs/install-habitat) on th
 
 On Windows, you can run the Supervisor as a Windows Service. You can use the `windows-service` Chef Habitat package to host the Supervisor inside the Windows Service Control Manager:
 
-```shell
+```bash
 PS C:\\> hab pkg install core/windows-service
 PS C:\\> hab pkg exec core/windows-service install
 ```
-
+---
 ##<a name="running-habitat-linux-containers" id="running-habitat-linux-containers" data-magellan-target="running-habitat-linux-containers">Running Chef Habitat Linux Containers</a>
 
 ### Container Setup and Assumptions
@@ -78,7 +76,7 @@ On Linux, the Chef Habitat Supervisor will normally run as the `root` user, and 
 
 In order to support this in containers and provide maximal flexibility, the contents of the `/hab` directory are both readable _and writable_ by the `root` _group_. When specifying a user to run a container process as, the user's primary group will be reported as `root` if no matching group can be found in `/etc/group`. This will allow the user to create and populate the `/hab/sup` directory for managing Supervisor state, as well as the `/hab/svc` directory, which will contain all the service's state. This is in line with [recommendations from OpenShift](https://docs.openshift.com/container-platform/3.3/creating_images/guidelines.html#openshift-container-platform-specific-guidelines) on how to create containers that can run as a non-root user, but nothing in Chef Habitat's implementation is specific to OpenShift; indeed, all the examples provided below use pure Docker.
 
-### Caveats Tt running as a non-root user
+### Caveats to running as a non-root user
 
 "There's no such thing as a free lunch", as the saying goes, and that holds true here. If the Supervisor is running as a non-root user, any processes that it supervises will be run as the same user; any values that the process might specify via `pkg_svc_user` and `pkg_svc_group` are essentially ignored. Furthermore, any files written out by the service during its operation are also owned by that same user.
 
@@ -88,9 +86,9 @@ Actually, the Supervisor does not actually care what user it is running as; rath
 
 ### Container deployment scenarios
 
-### Running a Chef Habitat Container as `root`
+#### Running a Chef Habitat container as a root user
 
-For completeness, we'll quickly cover the base case. If you are fine with running your container as `root`, you can do that directly:
+This is the base case. If you are fine with running your container as `root`, you can do that directly:
 
 ```sh
 docker run --rm -it core/redis:latest
@@ -98,7 +96,7 @@ docker run --rm -it core/redis:latest
 
 Here, `core/redis:latest` would be the image exported from the `core/redis` Chef Habitat package. The Supervisor will run as normal, with supervised processes running as the desired user.
 
-### Running a Chef Habitat Container as a Non-Root User
+#### Running a Chef Habitat container as a non-root user
 
 If you cannot run as the `root` user, but you are fine with `root` being the container user's primary group, you can simply specify a user ID to run as. This user need not exist in the container itself, and it's better if it doesn't. Using pure Docker, it might look like this:
 
@@ -128,7 +126,7 @@ This is merely an illustration; use whatever volume management approaches and se
 
 As illustrated, updates of this kind are completely optional; you may prefer to move update responsibility to your container scheduler and treat your containers as immutable in this regard.
 
-### Running a Chef Habitat Container as a Non-Root User in a Non-Root Group
+### Running a Chef Habitat container as a non-root user in a non-root group
 
 If for whatever reason you do not want your user to be in the `root` group inside the container, you will need to add some additional volumes in order to create the needed directories. However, since you will (by definition) not have write permissions on the `/hab` directory as a whole, your Supervisor _will not_ be able to update either itself or the services it supervises.
 
@@ -163,9 +161,11 @@ docker run --rm -it \\
 
 Again, this is just an illustrative example; use the appropriate strategies for your specific circumstances. The key information here is to ensure that the `/hab/sup`, `/hab/svc`, and `/hab/launcher` directories are writable by the user inside the container.
 
+---
 ## <a name="running-habitat-windows-containers" id="running-habitat-windows-containers" data-magellan-target="running-habitat-windows-containers">Running Chef Habitat Windows Containers</a>
 
 ### Container base image
+
 Exported Windows images use `microsoft/windowsservercore` as their base. This is the equivalent of a minimal Windows Server 2016 Core install. So you should not expect non default features and roles to be enabled such as IIS or Active Directory. Consider using an `init` hook to install any features needed by your Chef Habitat service.
 
 ### Container pull and startup time
@@ -178,19 +178,19 @@ There are two types of Windows containers and each runs under a different level 
 
 #### Windows Server containers
 
-These Containers, like their Linux counterparts, share the host's kernel. You can expect these containers to start pretty quickly and this is the default container type on Windows Server 2016 hosts.
+These containers, like their Linux counterparts, share the host's kernel. You can expect these containers to start pretty quickly and this is the default container type on Windows Server 2016 hosts.
 
 #### Hyper-V containers
 
 Windows Hyper-V containers run inside of a very minimal Hyper-V VM. As a result, they do not share the host's kernel and offer a higher level of security and isolation. The cost of this isolation is that it will take longer for the container to start - perhaps a noticeable delay. Also be aware that the VM is provisioned with a default 1 GB limit of memory. If your service requires more than a gigabyte of memory, you can use the `--memory` argument with `docker run` and pass a larger limit.
 
-```shell
+```bash
 docker run --memory 2GB -it core/mysql
 ```
 
 On a Windows 10 host, Windows containers will always run inside of Hyper-V isolation. Kernel sharing Windows Server containers are only available on Windows Server 2016 hosts. On Windows Server 2016, Windows Server containers are the default container type but you can force `docker run` to use Hyper-V containers by setting the `--isolation` argument to `hyperv`.
 
-```shell
+```bash
 docker run --isolation hyperv -it core/mysql
 ```
 
@@ -198,6 +198,7 @@ docker run --isolation hyperv -it core/mysql
 
 A common container pattern is to forward the container port to a local port and then access the container application by accessing `localhost` on the forwarded port. With Windows containers, published ports cannot be accessed using `localhost`. You will instead need to use the IP address of the host or the IP of the individual container to access the application's endpoint.
 
+---
 ## <a name="robust-supervisor-networks" id="robust-supervisor-networks" data-magellan-target="robust-supervisor-networks">Robust Supervisor Networks</a>
 
 Chef Habitat Supervisors communicate amongst each other using "gossip" algorithms, which underpin the membership management, leadership election, and service discovery mechanics of Chef Habitat. By simply being "peered" to a single existing Supervisor, a new Supervisor will gradually come to know about _all_ the Supervisors in a Chef Habitat network. The gossip algorithm has built-in features to counteract brief network splits, but care must be taken to set up a robust Supervisor network.
@@ -207,12 +208,14 @@ Chef Habitat Supervisors communicate amongst each other using "gossip" algorithm
 While a Chef Habitat Supervisor does not need to connect with any other Supervisors in order to be useful, leveraging a network of Supervisors unlocks the full potential of Chef Habitat as a platform. In order to do this, a Supervisor must be given the address of at least one other Supervisor in this network when it starts up; this is known as the "initial peer problem". You might think of a Supervisor network as an exclusive members-only club; you must first know a member in order to become a member yourself.
 
 This Supervisor does _not_ know about any other Supervisors, and will (at least initially) run in complete isolation.
-```
+
+```sh
 hab sup run
 ```
 
 This Supervisor, on the other hand, will start up knowing about three other Supervisors, and will quickly establish contact with each of them. Thanks to the gossip mechanism, it will also find out about every other Supervisor those initial Supervisors know about. Similarly, every other Supervisor will discover the presence of _this_ new Supervisor.
-```
+
+```sh
 hab sup run --peer=192.168.0.1 --peer=192.168.0.2 --peer=192.168.0.3
 ```
 
@@ -286,20 +289,21 @@ For those that like to keep things succinct, the above advice can be summed up t
 2. Never run services on those Supervisors
 3. Peer all other Supervisors to those first three
 
+### Related reading
+
 If you would like additional details, the following technical journal articles describe the algorithms that form the basis of Chef Habitat's gossip system:
 
-* [SWIM: Scalable Weakly-consistent Infection-style Process Group Membership Protocol][SWIM]
-* [A Robust and Scalable Peer-to-Peer Gossiping Protocol][Newscast]
+* [SWIM: Scalable Weakly-consistent Infection-style Process Group Membership Protocol](http://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf) by Abhinandan Das, Indranil Gupta, Ashish Motivala.
+* [A Robust and Scalable Peer-to-Peer Gossiping Protocol](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.90.8773&rep=rep1&type=pdf) by Spyros Voulgaris, Mark Jelasity, and Maarten van Steen.
 
-
-[SWIM]:http://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf
-[Newscast]:http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.90.8773&rep=rep1&type=pdf
-
+---
 ## <a name="container-orchestration" id="container-orchestration" data-magellan-target="container-orchestration">Container orchestration with Chef Habitat</a>
 
 Chef Habitat packages may be exported with the Supervisor directly into a [a variety of container formats](/docs/developing-packages/#pkg-exports), but frequently the container is running in a container orchestrator such as Kubernetes or Mesos. Container orchestrators provide scheduling and resource allocation, ensuring workloads are running and available. Containerized Chef Habitat packages can run within these runtimes, managing the applications while the runtimes handle the environment surrounding the application (ie. compute, networking, security).
 
-##<a name="kubernetes" id="kubernetes" data-magellan-target="kubernetes">Kubernetes</a>
+---
+## <a name="kubernetes" id="kubernetes" data-magellan-target="kubernetes">Kubernetes</a>
+
 [Kubernetes](http://kubernetes.io/) is an open source container cluster manager that is available as a stand-alone platform or embedded in several distributed platforms including [Google's Container Engine](https://cloud.google.com/container-engine/), [Tectonic](https://tectonic.com/) by [CoreOS](https://coreos.com/), and [OpenShift](https://openshift.com/) by [RedHat](https://redhat.com). Chef Habitat and Kubernetes are complementary: Kubernetes focuses on providing a platform for deployment, scaling, and operations of application containers across clusters of hosts while Chef Habitat manages the build pipeline and lifecycle of those application containers.
 
 ### Chef Habitat Operator
@@ -314,7 +318,7 @@ For more details on the Chef Habitat Operator, please refer to the [introductory
 
 When using the Chef Habitat Operator, you can easily convert packages and run them on your Kubernetes cluster using the [Kubernetes exporter](https://kinvolk.io/blog/2017/12/introducing-the-habitat-kubernetes-exporter/):
 
-```shell
+```bash
 $ hab pkg export kubernetes ORIGIN/NAME
 ```
 
@@ -322,13 +326,13 @@ $ hab pkg export kubernetes ORIGIN/NAME
 
 Users are not required to use the Chef Habitat Operator. Chef Habitat packages exported as containers may be deployed to Kubernetes through the [`kubectl` command](http://kubernetes.io/docs/user-guide/pods/single-container/). Using the [Docker exporter](/docs/developing-packages#pkg-exports) to create a containerized application, the container may be launched like this example:
 
-```shell
+```bash
 $ kubectl run mytutorial --image=myorigin/mytutorial --port=8080
 ```
 
 Assuming the Docker image is pulled from `myorigin/mytutorial` we are exposing port 8080 on the container for access. Networking ports exposed by Chef Habitat need to be passed to `kubectl run` as `--port` options. We can see our deployment with the `kubectl get` command:
 
-```shell
+```bash
 $ kubectl get pods -l run=mytutorial
 ```
 
@@ -350,6 +354,7 @@ Multi-container pod support through Chef Habitat is still under active developme
 * [Export a Chef Chef Habitat package](/docs/developing-packages/#pkg-exports)
 * [Chef Habitat CLI](/docs/habitat-cli)
 
+---
 ## <a name="aks-and-habitat" id="aks-and-habitat" data-magellan-target="aks-and-habitat">Azure Container Services (AKS)</a>
 
 [Azure Container Services (AKS)](https://azure.microsoft.com/en-us/services/container-service/)
@@ -364,7 +369,7 @@ a native integration with this service so you can publish your packages directly
 Azure Container Registry.
 
 In order to do this you need to create an Azure Service Principal that has `Owner` rights
-on your ACR instance.  You can do this with the following script, changing the environment
+on your ACR instance. You can do this with the following script, changing the environment
 variable values to match your environment.
 
 ```
@@ -389,7 +394,7 @@ Note: The unique Service Principal Name (the UUID) should be provided in the Che
 configuration.
 
 ## Connecting ACR and AKS for Chef Habitat Operator
-Since ACR is a private Docker registry, AKS must be authorized to pull images from it.  The best way is to
+Since ACR is a private Docker registry, AKS must be authorized to pull images from it. The best way is to
 create a role assignment on the Service Principal that is automatically created for AKS, granting it
 `Reader` access on your ACR instance.
 
@@ -423,7 +428,8 @@ of Chef Habitat packages on AKS.
 * [Chef Habitat Kubernetes Updater](https://github.com/habitat-sh/habitat-updater)
 * [Authenticate with Azure Container Registry from Azure Container Service](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-auth-aks#grant-aks-access-to-acr)
 
-# <a name="ecs-and-habitat" id="ecs-and-habitat" data-magellan-target="ecs-and-habitat">Amazon ECS and Chef Habitat</a>
+---
+## <a name="ecs-and-habitat" id="ecs-and-habitat" data-magellan-target="ecs-and-habitat">Amazon ECS and Chef Habitat</a>
 
 Amazon Web Services provides a container management service called [EC2 Container Service (ECS)](https://aws.amazon.com/ecs/). ECS provides a Docker registry, container hosting and tooling to make deploying Docker-based containers fairly straightforward. ECS will schedule and deploy  your Docker containers within a Task while Chef Habitat manages the applications.
 
@@ -431,13 +437,13 @@ Amazon Web Services provides a container management service called [EC2 Containe
 
 [EC2 Container Registry (ECR)](https://aws.amazon.com/ecr/) is a fully-managed Docker registry provided by Amazon Web Services. Applications exported to Docker with ```hab pkg export docker``` put the containers into namespaced repositories, so you will need to create these within ECR. For example, if you were building ```core/mongodb``` containers you would use the following command:
 
-```shell
+```bash
 $ aws ecr create-repository --repository-name core/mongodb
 ```
 
 To tag and push the images to the ECR you will use your Repository URI (substituting your **aws_account_id** and availability zone).
 
-```shell
+```bash
 $ docker tag core/mongodb:latest aws_account_id.dkr.ecr.ap-southeast-2.amazonaws.com/core/mongodb:latest
 $ docker push aws_account_id.dkr.ecr.ap-southeast-2.amazonaws.com/core/mongodb:latest
 ```
@@ -465,12 +471,13 @@ From the example, the ```mongo``` and ```national-parks``` services use the Dock
 
 The ```command``` entry for the National Parks Tomcat application allows the Chef Habitat Supervisor to ```--peer``` to the ```mongo``` gossip ring and ```--bind``` applies ```database``` entries to its Mongo configuration.
 
-### Additional Reading
+### Related reading
 
 * [Blog: A Journey with Chef Habitat on Amazon ECS, Part 1](/blog/2017/09/a-journey-with-habitat-on-amazon-ecs-part1/)
 * [Blog: A Journey with Chef Habitat on Amazon ECS, Part 2](/blog/2017/09/a-journey-with-habitat-on-amazon-ecs-part2/)
 
-##<a name="gke-and-habitat" id="gke-and-habitat" data-magellan-target="gke-and-habitat">Google Kubernetes Engine (GKE)</a>
+---
+## <a name="gke-and-habitat" id="gke-and-habitat" data-magellan-target="gke-and-habitat">Google Kubernetes Engine (GKE)</a>
 
 [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine/) is a fully managed Kubernetes service running on the Google Cloud Platform. It supports running Chef Habitat
 packages using the [Chef Habitat Kubernetes Operator](https://github.com/habitat-sh/habitat-operator).
@@ -491,10 +498,10 @@ $ gcloud auth configure-docker
 
 Further access control information is [available here](https://cloud.google.com/container-registry/docs/access-control).
 
-After a successful Chef Habitat package build, images can be pushed to the Container Registry using the registry URI.  The format of this
+After a successful Chef Habitat package build, images can be pushed to the Container Registry using the registry URI. The format of this
 follows: `[HOSTNAME]/[PROJECT-ID]/[IMAGE]:[TAG]`, more details at [this link](https://cloud.google.com/container-registry/docs/pushing-and-pulling):
 
-```shell
+```bash
 $ hab pkg export kubernetes ./results/habskp-hab-gcr-demo-0.1.0-20180710145742-x86_64-linux.hart
 $ docker tag habskp/hab-gcr-demo:latest eu.gcr.io/user-project/hab-gcr-demo:latest
 $ docker push eu.gcr.io/user-project/hab-gcr-demo:latest
@@ -502,7 +509,7 @@ $ docker push eu.gcr.io/user-project/hab-gcr-demo:latest
 
 ### Google Kubernetes Engine (GKE)
 
-After images have been pushed to the Container Registry, they may be deployed to GKE in the same project without any further configuration changes.  To
+After images have been pushed to the Container Registry, they may be deployed to GKE in the same project without any further configuration changes. To
 make images available publicly or across projects, see [this documentation](https://cloud.google.com/container-registry/docs/access-control).
 
 Below is a sample manifest that deploys the Chef Habitat managed container to GKE, pulling the image uploaded in the previous section
@@ -540,14 +547,14 @@ This also creates a Kubernetes load balancer service to expose port `8080` from 
 This example assumes [Chef Habitat Operator](https://github.com/habitat-sh/habitat-operator) is running on the Kubernetes cluster but it
 is also possible to deploy using `kubectl` for Chef Habitat packages exported as containers.
 
-
-## Related reading
+### Related reading
 
 * [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine/)
 * [Google Container Registry](https://cloud.google.com/container-registry/)
 
-
+---
 ## <a name="mesos-dcos" id="mesos-dcos" data-magellan-target="mesos-dcos">Apache Mesos and DC/OS</a>
+
 [Apache Mesos](https://mesos.apache.org/) is an open source distributed systems kernel and the distributed systems kernel for [Mesosphere's DC/OS](https://dcos.io) distributed platform.
 
 ### Mesos Containerizers
@@ -566,13 +573,13 @@ You can create native Mesos containers from Chef Habitat packages by following t
 
 2. Install or [build](/docs/developing-packages#plan-builds) the Chef Habitat package from which you want to create a Marathon application, for example:
 
-    ```shell
+    ```bash
     $ hab pkg install yourorigin/yourpackage
     ```
 
 3. Run the Mesos exporter on the package.
 
-    ```shell
+    ```bash
     $ hab pkg export mesos yourorigin/yourpackage
     ```
 
@@ -624,8 +631,8 @@ This is a basic integration, there are many improvements yet to be made. Here ar
  * Upload applications directly to the [Marathon application API](https://mesosphere.github.io/marathon/docs/application-basics.html).
  * Marathon supports unpacking several archive formats. Native `.hart` support could be added directly to Marathon.
 
-
-##<a name="planwriting-guide" id="planwriting-guide" data-magellan-target="planwriting-guide">Advanced Plan Writing Guide</a>
+---
+## <a name="planwriting-guide" id="planwriting-guide" data-magellan-target="planwriting-guide">Advanced Plan Writing Guide</a>
 
 The following is a best practice guide to how to write a production quality plan. These best practices are reflected in the requirements for a user to contribute a plan to the Chef Habitat [Core Plans](https://github.com/habitat-sh/core-plans/).
 
@@ -679,7 +686,7 @@ You can review the entire [plan syntax guide here](/docs/developing-packages/).
 
 Please note that the following conditions must be observed for any plan to be merged into core plans (and are important best practices for any plan):
 
-### Plan basic settings
+#### Plan basic settings
 
 You can read more about [basic plan settings](/docs/developing-packages/#write-plans) here. The minimum requirements for a core plan are:
 
@@ -688,15 +695,15 @@ You can read more about [basic plan settings](/docs/developing-packages/#write-p
 - pkg_shasum is set
 - pkg_description is set
 
-#### Callbacks
+##### Callbacks
 
 You can read more about [callbacks](/docs/reference/#reference-callbacks) here. The minimum requirement for a core plan are:
 
-#### Do's
+##### Do's
 
 - `do_prepare()` (`Invoke-Prepare` in a `plan.ps1`) is a good place to set environment variables and set the table to build the software. Think of it as a good place to do patches.
 
-#### Don't's
+##### Don't's
 
 - You should never call `exit` within a build phase. In a `plan.sh`, you should instead return an exit code such as `return 1` for failure, and `return 0` for success. In a `plan.ps1` you should call `Write-Exception` or `throw` an exception upon failure.
 - If you clone a repo from git, you must override `do_verify()` to `return 0` in a `plan.sh` or if you are authoring a `plan.ps1` then override `Invoke-Verify` with an empty implementation.
@@ -705,7 +712,7 @@ You can read more about [callbacks](/docs/reference/#reference-callbacks) here. 
 - You should not call any function or helper that begin with an underscore, for example `_dont_call_this_function()`. Those are internal only functions that are not supported for external use and will break your plan if you call them.
 - Don't run any code or run anything outside of a build phase or a function.
 
-#### Hooks
+##### Application lifecycle hooks
 
 The Supervisor dynamically invokes hooks at run-time, triggered by an application lifecycle event. You can read more about [hooks](/docs/reference/#reference-hooks) here.
 
@@ -721,9 +728,9 @@ The Supervisor dynamically invokes hooks at run-time, triggered by an applicatio
   - No one should ever edit anything in `/hab/` directly.
   - No one should write to anything in `/hab/` directly.
 
-#### README
+##### README.md
 
-All plans should have a README. Items to strongly consider including:
+All plans should have a README.md. Items to strongly consider including:
 
 - Your name as maintainer and supporter of this plan.
 - What Chef Habitat topology it uses (and the plan should have the correct topology for the technology).
@@ -745,7 +752,7 @@ significantly shorten the cycle time when working on configuration and applicati
 
 Build the plan as you normally would. When you start the Supervisor, pass the name of the directory with your plan inside it:
 
-```shell
+```bash
 $ hab sup run core/redis --config-from /src
 ```
 
@@ -780,7 +787,7 @@ do_install() {
 }
 ```
 
-## Relocate Hard-Coded Library Dependencies If Possible
+### Relocate Hard-Coded Library Dependencies If Possible
 
 On Linux, many binaries hardcode library dependencies to `/lib` or `/lib64` inside their ELF symbol table. Unfortunately, this means that Chef Habitat is unable to provide dependency isolation guarantees if packages are dependent on any operating system's libraries in those directories. These Chef Habitat packages will also fail to run in minimal environments like containers built using `hab-pkg-export-docker`, because there will not be a `glibc` inside `/lib` or `/lib64`.
 

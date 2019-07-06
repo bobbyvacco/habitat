@@ -2,7 +2,7 @@
 title: Chef Habitat Internals
 ---
 
-# Chef Habitat Internals
+# <a name="internals" id="internals" data-magellan-target="internals">Internals</a>
 
 This section will dive into the implementation details of how various Chef Habitat components work. These topics are for advanced users. It is not necessary to learn these concepts in order to use Chef Habitat.
 
@@ -25,13 +25,13 @@ Supervisors are configured to form a network by using the `--peer` argument and 
 
 Supervisor rings can be very large, comprising thousands of supervisors. The Supervisor communication protocol is low-bandwidth and designed to not interfere with your application's actual production traffic.
 
-Rings are divided into _service groups_, each of which has a name. All Supervisors within a service group share the same configuration and topology. 
+Rings are divided into _service groups_, each of which has a name. All Supervisors within a service group share the same configuration and topology.
 
 #### Butterfly
 
 Chef Habitat uses a gossip protocol named "Butterfly". It is a variant of [SWIM](http://prakhar.me/articles/swim) for membership and failure detection (over UDP), and a ZeroMQ based variant of [Newscast](http://www.cs.unibo.it/bison/publications/ap2pc03.pdf) for gossip. This protocol provides failure detection, service discovery, and leader election to the Chef Habitat Supervisor.
 
-Butterfly is an eventually consistent system - it says, with a very high degree of probability, that a given piece of information will be received by every member of the network. It makes no guarantees as to when that state will arrive; in practice, the answer is usually "quite quickly". 
+Butterfly is an eventually consistent system - it says, with a very high degree of probability, that a given piece of information will be received by every member of the network. It makes no guarantees as to when that state will arrive; in practice, the answer is usually "quite quickly".
 
 #### Vocabulary
 
@@ -106,10 +106,11 @@ Whats good about this system:
 * Messages are sent over TCP, giving them some durability guarantees.
 * In common use, the gossip protocol becomes inactive; if there are no rumors to send to a given member, nothing is sent.
 
-## Papers
+### Related reading
 
-* Many more details about the operation of SWIM can be found in its [paper](http://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf).
-* For information about the newscast approach to rumor dissemination, please refer to the [paper](http://www.cs.unibo.it/bison/publications/ap2pc03.pdf).
+* [SWIM: Scalable Weakly-consistent Infection-style Process Group Membership
+Protocol](http://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf) by Abhinandan Das, Indranil Gupta, and Ashish Motivala.
+* [A Robust and Scalable Peer-to-Peer Gossiping Protocol](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.90.8773&rep=rep1&type=pdf) by Spyros Voulgaris, Mark Jelasity, and Maarten van Steen.
 
 ---
 ## <a name="election-internals" id="election-internals" data-magellan-target="election-internals" type="anchor">Leader Election</a>
@@ -128,9 +129,9 @@ Every peer that receives this rumor does a simple lexicographic comparison of it
 
 An election ends when a candidate peer X gets a rumor back from the ring saying that it (X) is the winner, with all members voting. At this point, it sends out a rumor saying it is the declared winner, and the election cycle ends.
 
-### Papers
+### Related reading
 
-* For more information about the Bully algorithm, please see the [paper](http://dl.acm.org/citation.cfm?id=1309451) "Elections in a Distributed Computing System" by Héctor García-Molina.
+* For more information about the Bully algorithm, see [Elections in a Distributed Computing System](http://dl.acm.org/citation.cfm?id=1309451) by Héctor García-Molina.
 
 ---
 ## <a name="crypto-internals" id="crypto-internals" data-magellan-target="crypto-internals" type="anchor">Cryptography</a>
@@ -149,13 +150,13 @@ Chef Habitat packages are signed using [BLAKE2b](https://blake2.net/) checksums.
 
 You can examine the first four lines of a `.hart` file to extract the signature from it, because it is an `xz`-compressed tarball with a metadata header. The `hab pkg header` command will do this for you.
 
-```shell
+```bash
 $ hab pkg header somefile.hart
 ```
 
 outputs:
 
-```shell
+```bash
 » Reading package header for somefile.hart
 
 Package        : somefile.hart
@@ -167,7 +168,7 @@ Raw Signature  : a8yDoiA0Mv0CcW6xVyfkSOIZ0LW0beef4RPtvKL56MxemgG6dMVlKG1Ibplp7DU
 
 The `.hart` file format is designed in this way to allow you to extract both the signature and the payload separately for inspection. To extract only the `xz`-compressed content, bypassing the signature, you could type this:
 
-```shell
+```bash
 $ tail -n +6 somefile.hart | xzcat | tar x
 ```
 
@@ -191,7 +192,7 @@ We add the following software to augment the Linux From Scratch toolchain:
 * A copy of curl’s [cacert.pem](https://curl.haxx.se/ca/cacert.pem) certificates - used by wget when connecting to SSL-enabled websites. This is copied into the tarball as `/tools/etc/cacert.pem`.
 * A small wrapper script for `wget` so that we use the SSL certificates we added to the tarball. Its source is:
 
-```shell
+```bash
 #!/tools/bin/busybox sh
 exec /tools/bin/wget.real --ca-certificate /tools/etc/cacert.pem $*
 ```
@@ -208,7 +209,7 @@ Note: In order to build large amounts of software in the fastest way possible, w
 
 If you need to build the stage1 tarball from scratch, we will be following the [Linux from Scratch](http://www.linuxfromscratch.org/lfs/) guide, specifically from the start to the end of section II.5. ("Constructing a Temporary System"). By this point, you should be the `root` user with a `/mnt/lfs/tools` directory containing the cross compiled minimal toolchain. From here, we create a tarball of the `tools/` directory and append our Chef Habitat-specific software into it:
 
-```shell
+```bash
 # Create a variable for the target tarball
 $ TARFILE=~ubuntu/habitat-studio-stage1-$(date -u +%Y%m%d%H%M%S).tar
 
@@ -250,13 +251,13 @@ Alternatively, from time to time and especially with breaking changes to `hab`�
 
 You can do this work on a Linux distribution such as Ubuntu, or perform these tasks in a Docker container if that's more convenient:
 
-```shell
+```bash
 $ docker run --rm -ti -v $(pwd):/src ubuntu:xenial bash
 ```
 
 These commands assume you are running in a Docker container and are missing some software:
 
-```shell
+```bash
 # Install xz tools
 $ apt-get update && apt-get install -y xz-utils
 
@@ -291,7 +292,7 @@ and finally, place this tarball under `/tmp` which will help the Studio code fin
 
 In this stage, we rebuild all the base packages needed by Chef Habitat using the tools (compiler, etc.) from the existing tools tarball. You will need a copy of the [habitat](https://github.com/habitat-sh/habitat) and [core-plans](https://github.com/habitat-sh/core-plans) repos on your local disk. For our work, we will assume that everything is being run under a common parent directory called `habitat-sh/`. Assuming we want to rebuild the Chef Habitat software as of the last release tag (we'll use `0.56.0` here) and the core plans from latest, here's how to get set up:
 
-```shell
+```bash
 $ mkdir habitat-sh
 $ cd habitat-sh
 $ git clone https://github.com/habitat-sh/habitat.git
@@ -301,7 +302,7 @@ $ git clone https://github.com/habitat-sh/core-plans.git
 
 Next, let's get our minimum Chef Habitat software to start us off:
 
-```shell
+```bash
 # (Optional) Completely clean this build host--this will purge all Chef Habitat
 # software, caches, and keys from this host!
 $ rm -rf /hab
@@ -316,7 +317,7 @@ $ hab origin key generate core
 
 Finally, it's a good idea to clear out any work that might have been left over from previous builds:
 
-```shell
+```bash
 $ sudo rm -rf ./results ./tmp/*.db
 ```
 
@@ -324,7 +325,7 @@ $ sudo rm -rf ./results ./tmp/*.db
 
 To simplify the process of setting up and entering a `stage1` Studio, use this [stage1 Studio](https://github.com/habitat-sh/core-plans/blob/master/bin/bootstrap/stage1-studio.sh) wrapper:
 
-```shell
+```bash
 $ ./core-plans/bin/bootstrap/stage1-studio.sh enter
 ```
 
@@ -339,7 +340,7 @@ $ ./core-plans/bin/bootstrap/stage1-build-base-plans.sh
 
 Once the set has finished building, we are going to use the newly built Studio immediately and move the artifacts to the side for more use:
 
-```shell
+```bash
 # Exit the Studio
 $ exit
 # Save the stage1 artifacts
@@ -364,7 +365,7 @@ Has a package identifier of `core/hab-backline/0.56.0/20180322160653`. In genera
 
 Finally, to help set up environment variables for the Studio, we're going to use a [stage2 Studio](https://github.com/habitat-sh/core-plans/blob/master/bin/bootstrap/stage2-studio.sh) wrapper:
 
-```shell
+```bash
 # Install only stage1 packages when setting up this Studio--that's why we're
 # calling \`new\` explicitly before using
 $ env HAB_STUDIO_BACKLINE_PKG=core/hab-backline/0.56.0/20180322160653 ./core-plans/bin/bootstrap/stage2-studio.sh new
@@ -392,7 +393,7 @@ $ ./core-plans/bin/bootstrap/stage2-build-base-plans.sh
 
 By now we should have a full set of base packages that have been built using Chef Habitat packages. These should be suitable for use when building other packages. As a final cleanup:
 
-```shell
+```bash
 # Exit the Studio
 $ exit
 # Save the stage2 artifacts
@@ -405,7 +406,7 @@ At this point we have a solid set of base packages which can be used to built an
 
 So, we're going to find all relevant Plans, feed them to `build-order.rb`, exclude the base plans set, and format the results here:
 
-```shell
+```bash
 # Install Ruby
 $ sudo hab pkg install core/ruby
 # Calculate build order of remaining plans and exclude base plans
@@ -423,7 +424,7 @@ As in the stage2 build, we need to get the fully-qualified package identifier of
 
 As before, to help set up environment variables for the Studio, we're going to use a [stage3 Studio](https://github.com/habitat-sh/core-plans/blob/master/bin/bootstrap/stage3-studio.sh) wrapper:
 
-```shell
+```bash
 # Install only stage2 packages when setting up this Studio--that's why we're
 # calling `new` explicitly before using
 $ env HAB_STUDIO_BACKLINE_PKG=core/hab-backline/0.56.0/20180322181801 ./core-plans/bin/bootstrap/stage3-studio.sh new
@@ -451,7 +452,7 @@ $ ./core-plans/bin/bootstrap/stage3-build-remaining-plans.sh stage3_world_order.
 
 If there are failures as you work through the remaining world, you may discover this is due to a) an older version of the software that can't build against a newer/different compiler, b) a failure that is currently in master and not yet caught (ex: source url now returns a 404), c) other issues which require more debugging and work. You can try to fix the package at this moment and re-run the `stage3-build-remaining-plan.sh` which will resume your failed build and continue. Alternatively, you could remove that Plan out of the rebuild set and deal with it separately. The catch here is that your failing package might become a dependency of another package later on, so you would want to remove those as well. Thankfully, there's a way you can get this list, by running another program in the `core-plans` repository. Note that you want to run this in the same common parent directory containing the `core-plans` and `habitat` git clones, and also outside of a Studio. Let's assume that the plan is for `core/doxygen`. You can run:
 
-```shell
+```bash
 $ find core-plans habitat/components -name plan.sh \
   | $(hab pkg path core/ruby)/bin/ruby ./core-plans/bin/build-dependent-order.rb core/doxygen \
   | cut -d ' ' -f 2
@@ -480,19 +481,19 @@ core-plans/msgpack
 
 Then, back in your Studio instance shell, re-run the build wrapper program:
 
-```shell
+```bash
 $ ./core-plans/bin/bootstrap/stage3-build-remaining-plans.sh stage3_world_order.working
 ```
 
 You'll want to make a note of which packages you've skipped, but since we have a master/unmodified copy of the build order you can see your changes with:
 
-```shell
+```bash
 diff -u stage3_world_order stage3_world_order.working
 ```
 
 Finally, assuming you have a *lot* of newly built packages, it's worthwhile to exit that Studio and save off the packages:
 
-```shell
+```bash
 # Exit the Studio
 $ exit
 # Save the stage3 artifacts
@@ -503,7 +504,7 @@ $ mv ./results ./results-stage3
 
 While you don't have to wait for the end to completely clean up, it can be beneficial to be able to enter any of the stage1/stage2/stage3 Studios for reference. However, if and when you feel like you're finished with any of these Studio instances, you can clean them up with the associated Studio wrapper script. For example, to clean up all the staging Studio instances:
 
-```shell
+```bash
 $ ./core-plans/bin/bootstrap/stage1-studio.sh rm
 $ ./core-plans/bin/bootstrap/stage2-studio.sh rm
 $ ./core-plans/bin/bootstrap/stage3-studio.sh rm
