@@ -72,10 +72,6 @@ impl fmt::Display for RumorExpiration {
     }
 }
 
-impl Default for RumorExpiration {
-    fn default() -> RumorExpiration { Self::forever() }
-}
-
 impl PartialOrd for RumorExpiration {
     fn partial_cmp(&self, other: &RumorExpiration) -> Option<cmp::Ordering> {
         Some(self.0.cmp(&other.0))
@@ -126,7 +122,7 @@ impl RumorExpiration {
 
     pub fn from_proto(expiration: Option<String>) -> Result<Self> {
         if expiration.is_none() {
-            return Ok(RumorExpiration::default());
+            return Ok(RumorExpiration::forever());
         }
 
         let exp = DateTime::parse_from_rfc3339(&expiration.unwrap())?;

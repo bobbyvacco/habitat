@@ -180,7 +180,7 @@ impl Default for Member {
                  gossip_port: 0,
                  persistent:  false,
                  departed:    false,
-                 expiration:  RumorExpiration::default(), }
+                 expiration:  RumorExpiration::forever(), }
     }
 }
 

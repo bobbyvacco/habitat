@@ -111,7 +111,7 @@ impl Service {
                         .expect("Struct should serialize to bytes")
                           })
                           .unwrap_or_default(),
-                  expiration: RumorExpiration::default() }
+                  expiration: RumorExpiration::forever() }
     }
 }
 

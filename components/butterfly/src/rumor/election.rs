@@ -78,7 +78,7 @@ impl Election {
                        ElectionStatus::NoQuorum
                    },
                    votes: vec![from_id],
-                   expiration: RumorExpiration::default() }
+                   expiration: RumorExpiration::forever() }
     }
 
     /// Insert a vote for the election.

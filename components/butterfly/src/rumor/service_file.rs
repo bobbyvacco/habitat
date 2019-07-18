@@ -76,7 +76,7 @@ impl ServiceFile {
                       encrypted: false,
                       filename: filename.into(),
                       body,
-                      expiration: RumorExpiration::default() }
+                      expiration: RumorExpiration::forever() }
     }
 
     /// Encrypt the contents of the service file

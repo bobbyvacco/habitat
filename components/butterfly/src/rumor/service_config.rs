@@ -70,7 +70,7 @@ impl ServiceConfig {
                         incarnation: 0,
                         encrypted: false,
                         config,
-                        expiration: RumorExpiration::default() }
+                        expiration: RumorExpiration::forever() }
     }
 
     pub fn encrypt(&mut self, user_pair: &BoxKeyPair, service_pair: &BoxKeyPair) -> Result<()> {

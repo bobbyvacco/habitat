@@ -32,7 +32,7 @@ impl fmt::Display for Departure {
 impl Departure {
     pub fn new(member_id: &str) -> Self {
         Departure { member_id:  member_id.to_string(),
-                    expiration: RumorExpiration::default(), }
+                    expiration: RumorExpiration::forever(), }
     }
 }
 
