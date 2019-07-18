@@ -56,7 +56,6 @@ impl PartialEq for ServiceConfig {
         && self.incarnation == other.incarnation
         && self.encrypted == other.encrypted
         && self.config == other.config
-        && self.expiration == other.expiration
     }
 }
 

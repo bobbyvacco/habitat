@@ -56,7 +56,6 @@ impl PartialEq for ServiceFile {
         && self.encrypted == other.encrypted
         && self.filename == other.filename
         && self.body == other.body
-        && self.expiration == other.expiration
     }
 }
 

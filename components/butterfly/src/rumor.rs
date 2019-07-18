@@ -30,9 +30,7 @@ use crate::{error::{Error,
 use bytes::BytesMut;
 use chrono::{offset::Utc,
              DateTime,
-             Datelike,
-             Duration,
-             Timelike};
+             Duration};
 use prometheus::IntCounterVec;
 use prost::Message as ProstMessage;
 use serde::{ser::{SerializeMap,
@@ -40,10 +38,7 @@ use serde::{ser::{SerializeMap,
                   SerializeStruct},
             Serialize,
             Serializer};
-use std::{cmp::{self,
-                PartialEq,
-                PartialOrd},
-          collections::{hash_map::Entry,
+use std::{collections::{hash_map::Entry,
                         HashMap},
           default::Default,
           fmt::{self,
@@ -72,28 +67,6 @@ impl fmt::Display for Expiration {
     }
 }
 
-impl PartialOrd for Expiration {
-    fn partial_cmp(&self, other: &Expiration) -> Option<cmp::Ordering> {
-        Some(self.0.cmp(&other.0))
-    }
-}
-
-impl PartialEq for Expiration {
-    fn eq(&self, other: &Expiration) -> bool {
-        // If the expiration dates are within 10 seconds of each other, consider them equal.
-        // This is an attempt to account for clock skew, since it's unlikely that rumors on
-        // different nodes will ever have expiration dates that match down to the second.
-        // Note that the cast below from u32 to i32 is safe because we know that second() returns
-        // values in the range of 0 - 60.
-        self.0.year() == other.0.year()
-        && self.0.month() == other.0.month()
-        && self.0.day() == other.0.day()
-        && self.0.hour() == other.0.hour()
-        && self.0.minute() == other.0.minute()
-        && (self.0.second() as i32 - other.0.second() as i32).abs() <= 10
-    }
-}
-
 impl Expiration {
     // Some rumors we don't want to ever have naturally age out. We only want them
     // to expire when there is a new rumor to take their place (e.g. a new election). When that
@@ -111,6 +84,8 @@ impl Expiration {
     pub fn new(expiration: DateTime<Utc>) -> Self { Self(expiration) }
 
     pub fn expire(&mut self) { self.0 = Self::soon_date() }
+
+    pub fn expired(&self, now: DateTime<Utc>) -> bool { now > self.0 }
 
     fn soon_date() -> DateTime<Utc> {
         habitat_core::env_config_duration!(ExpirationSeconds, HAB_RUMOR_EXPIRATION_SECS => from_secs, time::Duration::from_secs(60 * 60)); // 1 hour
@@ -501,7 +476,7 @@ impl<T> RumorStore<T> where T: Rumor
             .values()
             .flat_map(HashMap::values)
             .cloned()
-            .partition(|rumor| rumor.expiration() < &Expiration::new(expiration_date))
+            .partition(|rumor| rumor.expiration().expired(expiration_date))
     }
 
     pub fn expired_rumors(&self, expiration_date: DateTime<Utc>) -> Vec<T> {

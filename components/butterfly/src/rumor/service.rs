@@ -76,7 +76,6 @@ impl PartialEq for Service {
         self.member_id == other.member_id
         && self.service_group == other.service_group
         && self.incarnation == other.incarnation
-        && self.expiration == other.expiration
     }
 }
 

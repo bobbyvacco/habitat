@@ -130,7 +130,7 @@ pub type UuidSimple = String;
 
 /// A member in the swim group. Passes most of its functionality along to the internal protobuf
 /// representation.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Member {
     pub id:          String,
     pub incarnation: Incarnation,
@@ -140,6 +140,19 @@ pub struct Member {
     pub persistent:  bool,
     pub departed:    bool,
     pub expiration:  Expiration,
+}
+
+// We can't derive this any more because we don't want Expiration to factor into equality
+impl PartialEq for Member {
+    fn eq(&self, other: &Member) -> bool {
+        self.id == other.id
+        && self.incarnation == other.incarnation
+        && self.address == other.address
+        && self.swim_port == other.swim_port
+        && self.gossip_port == other.gossip_port
+        && self.persistent == other.persistent
+        && self.departed == other.departed
+    }
 }
 
 impl Member {
@@ -162,7 +175,7 @@ impl Member {
     pub fn expire(&mut self) { self.expiration = Expiration::soon(); }
 
     pub fn expired(&self, expiration_date: DateTime<Utc>) -> bool {
-        Expiration::new(expiration_date) > self.expiration
+        self.expiration.expired(expiration_date)
     }
 }
 
