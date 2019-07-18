@@ -7,8 +7,8 @@ use crate::{error::{Error,
             protocol::{self,
                        newscast,
                        FromProto},
-            rumor::{Rumor,
-                    RumorExpiration,
+            rumor::{Expiration,
+                    Rumor,
                     RumorPayload,
                     RumorType}};
 use habitat_core::{package::Identifiable,
@@ -31,7 +31,7 @@ pub struct Service {
     pub pkg:           String,
     pub cfg:           Vec<u8>,
     pub sys:           SysInfo,
-    pub expiration:    RumorExpiration,
+    pub expiration:    Expiration,
 }
 
 impl fmt::Display for Service {
@@ -111,7 +111,7 @@ impl Service {
                         .expect("Struct should serialize to bytes")
                           })
                           .unwrap_or_default(),
-                  expiration: RumorExpiration::forever() }
+                  expiration: Expiration::forever() }
     }
 }
 
@@ -125,7 +125,7 @@ impl FromProto<newscast::Rumor> for Service {
             RumorPayload::Service(payload) => payload,
             _ => panic!("from-bytes service"),
         };
-        let expiration = RumorExpiration::from_proto(payload.expiration)?;
+        let expiration = Expiration::from_proto(payload.expiration)?;
         Ok(Service { member_id: payload.member_id
                                        .ok_or(Error::ProtocolMismatch("member-id"))?,
                      service_group:
@@ -175,7 +175,7 @@ impl Rumor for Service {
 
     fn key(&self) -> &str { self.service_group.as_ref() }
 
-    fn expiration(&self) -> &RumorExpiration { &self.expiration }
+    fn expiration(&self) -> &Expiration { &self.expiration }
 
     fn expire(&mut self) {
         self.expiration.expire();

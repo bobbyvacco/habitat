@@ -8,8 +8,8 @@ use crate::{error::{Error,
                        newscast::{self,
                                   Rumor as ProtoRumor},
                        FromProto},
-            rumor::{Rumor,
-                    RumorExpiration,
+            rumor::{Expiration,
+                    Rumor,
                     RumorPayload,
                     RumorType}};
 use habitat_core::{crypto::{keys::box_key_pair::WrappedSealedBox,
@@ -28,7 +28,7 @@ pub struct ServiceFile {
     pub encrypted:     bool,
     pub filename:      String,
     pub body:          Vec<u8>, // TODO: make this a String
-    pub expiration:    RumorExpiration,
+    pub expiration:    Expiration,
 }
 
 impl fmt::Display for ServiceFile {
@@ -76,7 +76,7 @@ impl ServiceFile {
                       encrypted: false,
                       filename: filename.into(),
                       body,
-                      expiration: RumorExpiration::forever() }
+                      expiration: Expiration::forever() }
     }
 
     /// Encrypt the contents of the service file
@@ -113,7 +113,7 @@ impl FromProto<ProtoRumor> for ServiceFile {
             RumorPayload::ServiceFile(payload) => payload,
             _ => panic!("from-bytes service-config"),
         };
-        let expiration = RumorExpiration::from_proto(payload.expiration)?;
+        let expiration = Expiration::from_proto(payload.expiration)?;
         Ok(ServiceFile { from_id: rumor.from_id.ok_or(Error::ProtocolMismatch("from-id"))?,
                          service_group:
                              payload.service_group
@@ -158,7 +158,7 @@ impl Rumor for ServiceFile {
 
     fn key(&self) -> &str { &self.service_group }
 
-    fn expiration(&self) -> &RumorExpiration { &self.expiration }
+    fn expiration(&self) -> &Expiration { &self.expiration }
 
     fn expire(&mut self) {
         self.expiration.expire();

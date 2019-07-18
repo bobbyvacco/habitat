@@ -8,8 +8,8 @@ use crate::{error::{Error,
                        newscast::{self,
                                   Rumor as ProtoRumor},
                        FromProto},
-            rumor::{Rumor,
-                    RumorExpiration,
+            rumor::{Expiration,
+                    Rumor,
                     RumorPayload,
                     RumorType}};
 use habitat_core::{crypto::{keys::box_key_pair::WrappedSealedBox,
@@ -29,7 +29,7 @@ pub struct ServiceConfig {
     pub incarnation:   u64,
     pub encrypted:     bool,
     pub config:        Vec<u8>, // TODO: make this a String
-    pub expiration:    RumorExpiration,
+    pub expiration:    Expiration,
 }
 
 impl fmt::Display for ServiceConfig {
@@ -70,7 +70,7 @@ impl ServiceConfig {
                         incarnation: 0,
                         encrypted: false,
                         config,
-                        expiration: RumorExpiration::forever() }
+                        expiration: Expiration::forever() }
     }
 
     pub fn encrypt(&mut self, user_pair: &BoxKeyPair, service_pair: &BoxKeyPair) -> Result<()> {
@@ -119,7 +119,7 @@ impl FromProto<ProtoRumor> for ServiceConfig {
             RumorPayload::ServiceConfig(payload) => payload,
             _ => panic!("from-bytes service-config"),
         };
-        let expiration = RumorExpiration::from_proto(payload.expiration)?;
+        let expiration = Expiration::from_proto(payload.expiration)?;
         Ok(ServiceConfig { from_id: rumor.from_id.ok_or(Error::ProtocolMismatch("from-id"))?,
                            service_group: payload.service_group
                                                  .ok_or(Error::ProtocolMismatch("service-group"))
@@ -162,7 +162,7 @@ impl Rumor for ServiceConfig {
 
     fn key(&self) -> &str { &self.service_group }
 
-    fn expiration(&self) -> &RumorExpiration { &self.expiration }
+    fn expiration(&self) -> &Expiration { &self.expiration }
 
     fn expire(&mut self) {
         self.expiration.expire();

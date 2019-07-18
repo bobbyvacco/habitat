@@ -10,8 +10,8 @@ use crate::{error::{Error,
                        newscast::{self,
                                   Rumor as ProtoRumor},
                        FromProto},
-            rumor::{Rumor,
-                    RumorExpiration,
+            rumor::{Expiration,
+                    Rumor,
                     RumorPayload,
                     RumorType}};
 use std::{cmp::Ordering,
@@ -20,7 +20,7 @@ use std::{cmp::Ordering,
 #[derive(Debug, Clone, Serialize)]
 pub struct Departure {
     pub member_id:  String,
-    pub expiration: RumorExpiration,
+    pub expiration: Expiration,
 }
 
 impl fmt::Display for Departure {
@@ -32,7 +32,7 @@ impl fmt::Display for Departure {
 impl Departure {
     pub fn new(member_id: &str) -> Self {
         Departure { member_id:  member_id.to_string(),
-                    expiration: RumorExpiration::forever(), }
+                    expiration: Expiration::forever(), }
     }
 }
 
@@ -47,7 +47,7 @@ impl FromProto<ProtoRumor> for Departure {
             _ => panic!("from-bytes departure"),
         };
 
-        let expiration = RumorExpiration::from_proto(payload.expiration)?;
+        let expiration = Expiration::from_proto(payload.expiration)?;
         Ok(Departure { member_id: payload.member_id
                                          .ok_or(Error::ProtocolMismatch("member-id"))?,
                        expiration })
@@ -71,7 +71,7 @@ impl Rumor for Departure {
 
     fn key(&self) -> &str { "departure" }
 
-    fn expiration(&self) -> &RumorExpiration { &self.expiration }
+    fn expiration(&self) -> &Expiration { &self.expiration }
 
     // This implementation is left empty on purpose. We never want to expire Departure rumors. If
     // we did, then the mechanism provided by 'hab sup depart' for permanently banning a supervisor

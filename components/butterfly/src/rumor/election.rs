@@ -16,8 +16,8 @@ use crate::{error::{Error,
                        newscast::{self,
                                   Rumor as ProtoRumor},
                        FromProto},
-            rumor::{Rumor,
-                    RumorExpiration,
+            rumor::{Expiration,
+                    Rumor,
                     RumorPayload,
                     RumorType}};
 use std::{fmt,
@@ -40,7 +40,7 @@ pub struct Election {
     pub suitability:   u64,
     pub status:        ElectionStatus,
     pub votes:         Vec<String>,
-    pub expiration:    RumorExpiration,
+    pub expiration:    Expiration,
 }
 
 impl fmt::Display for Election {
@@ -78,7 +78,7 @@ impl Election {
                        ElectionStatus::NoQuorum
                    },
                    votes: vec![from_id],
-                   expiration: RumorExpiration::forever() }
+                   expiration: Expiration::forever() }
     }
 
     /// Insert a vote for the election.
@@ -138,7 +138,7 @@ impl FromProto<ProtoRumor> for Election {
             _ => panic!("from-bytes election"),
         };
         let from_id = rumor.from_id.ok_or(Error::ProtocolMismatch("from-id"))?;
-        let expiration = RumorExpiration::from_proto(payload.expiration)?;
+        let expiration = Expiration::from_proto(payload.expiration)?;
         Ok(Election { member_id: from_id.clone(),
                       service_group: payload.service_group
                                             .ok_or(Error::ProtocolMismatch("service-group"))?,
@@ -214,7 +214,7 @@ impl Rumor for Election {
 
     fn key(&self) -> &str { &self.service_group }
 
-    fn expiration(&self) -> &RumorExpiration { &self.expiration }
+    fn expiration(&self) -> &Expiration { &self.expiration }
 
     // This implementation is left empty on purpose. We never want to expire Elections. There can
     // only ever be 1 Election rumor per service group, by design, so expiration isn't necessary.
@@ -296,7 +296,7 @@ impl Rumor for ElectionUpdate {
 
     fn key(&self) -> &str { self.0.key() }
 
-    fn expiration(&self) -> &RumorExpiration { &self.0.expiration }
+    fn expiration(&self) -> &Expiration { &self.0.expiration }
 
     fn expire(&mut self) { self.0.expire() }
 }

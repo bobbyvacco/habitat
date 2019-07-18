@@ -7,7 +7,7 @@ use crate::{error::{Error,
                        newscast,
                        swim as proto,
                        FromProto},
-            rumor::{RumorExpiration,
+            rumor::{Expiration,
                     RumorKey,
                     RumorPayload,
                     RumorType}};
@@ -139,7 +139,7 @@ pub struct Member {
     pub gossip_port: u16,
     pub persistent:  bool,
     pub departed:    bool,
-    pub expiration:  RumorExpiration,
+    pub expiration:  Expiration,
 }
 
 impl Member {
@@ -159,10 +159,10 @@ impl Member {
         }
     }
 
-    pub fn expire(&mut self) { self.expiration = RumorExpiration::soon(); }
+    pub fn expire(&mut self) { self.expiration = Expiration::soon(); }
 
     pub fn expired(&self, expiration_date: DateTime<Utc>) -> bool {
-        RumorExpiration::new(expiration_date) > self.expiration
+        Expiration::new(expiration_date) > self.expiration
     }
 }
 
@@ -180,7 +180,7 @@ impl Default for Member {
                  gossip_port: 0,
                  persistent:  false,
                  departed:    false,
-                 expiration:  RumorExpiration::forever(), }
+                 expiration:  Expiration::forever(), }
     }
 }
 
@@ -268,7 +268,7 @@ fn as_port(x: i32) -> Option<u16> {
 
 impl FromProto<proto::Member> for Member {
     fn from_proto(proto: proto::Member) -> Result<Self> {
-        let expiration = RumorExpiration::from_proto(proto.expiration)?;
+        let expiration = Expiration::from_proto(proto.expiration)?;
         Ok(Member { id: proto.id.ok_or(Error::ProtocolMismatch("id"))?,
                     incarnation: proto.incarnation
                                       .map_or_else(Incarnation::default, Incarnation::from),

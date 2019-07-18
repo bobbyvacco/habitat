@@ -64,22 +64,22 @@ lazy_static! {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RumorExpiration(DateTime<Utc>);
+pub struct Expiration(DateTime<Utc>);
 
-impl fmt::Display for RumorExpiration {
+impl fmt::Display for Expiration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0.to_rfc3339())
     }
 }
 
-impl PartialOrd for RumorExpiration {
-    fn partial_cmp(&self, other: &RumorExpiration) -> Option<cmp::Ordering> {
+impl PartialOrd for Expiration {
+    fn partial_cmp(&self, other: &Expiration) -> Option<cmp::Ordering> {
         Some(self.0.cmp(&other.0))
     }
 }
 
-impl PartialEq for RumorExpiration {
-    fn eq(&self, other: &RumorExpiration) -> bool {
+impl PartialEq for Expiration {
+    fn eq(&self, other: &Expiration) -> bool {
         // If the expiration dates are within 10 seconds of each other, consider them equal.
         // This is an attempt to account for clock skew, since it's unlikely that rumors on
         // different nodes will ever have expiration dates that match down to the second.
@@ -94,7 +94,7 @@ impl PartialEq for RumorExpiration {
     }
 }
 
-impl RumorExpiration {
+impl Expiration {
     // Some rumors we don't want to ever have naturally age out. We only want them
     // to expire when there is a new rumor to take their place (e.g. a new election). When that
     // type of trigger event happens, we will manually set the expiration date to a short time in
@@ -102,19 +102,19 @@ impl RumorExpiration {
     // the expiration date to 100 years in the future, which is effectively forever for our
     // purposes. This is far more convenient and natural to work with than having to deal with
     // Option<DateTime<Utc>>.
-    pub fn forever() -> Self { RumorExpiration(Utc::now() + Duration::weeks(5200)) }
+    pub fn forever() -> Self { Expiration(Utc::now() + Duration::weeks(5200)) }
 
     // This is more of a generic expiration date that we can apply whenever we have a rumor we
     // don't need to keep around any more.
-    pub fn soon() -> Self { RumorExpiration(Self::soon_date()) }
+    pub fn soon() -> Self { Expiration(Self::soon_date()) }
 
     pub fn new(expiration: DateTime<Utc>) -> Self { Self(expiration) }
 
     pub fn expire(&mut self) { self.0 = Self::soon_date() }
 
     fn soon_date() -> DateTime<Utc> {
-        habitat_core::env_config_duration!(RumorExpirationSeconds, HAB_RUMOR_EXPIRATION_SECS => from_secs, time::Duration::from_secs(60 * 60)); // 1 hour
-        let exp_secs: time::Duration = RumorExpirationSeconds::configured_value().into();
+        habitat_core::env_config_duration!(ExpirationSeconds, HAB_RUMOR_EXPIRATION_SECS => from_secs, time::Duration::from_secs(60 * 60)); // 1 hour
+        let exp_secs: time::Duration = ExpirationSeconds::configured_value().into();
         Utc::now() + Duration::from_std(exp_secs).expect("Rumor Expiration seconds")
     }
 
@@ -122,11 +122,11 @@ impl RumorExpiration {
 
     pub fn from_proto(expiration: Option<String>) -> Result<Self> {
         if expiration.is_none() {
-            return Ok(RumorExpiration::forever());
+            return Ok(Expiration::forever());
         }
 
         let exp = DateTime::parse_from_rfc3339(&expiration.unwrap())?;
-        Ok(RumorExpiration(exp.with_timezone(&Utc)))
+        Ok(Expiration(exp.with_timezone(&Utc)))
     }
 }
 
@@ -188,7 +188,7 @@ pub trait Rumor: Message<ProtoRumor> + Sized + Debug {
     fn key(&self) -> &str;
     fn id(&self) -> &str;
     fn merge(&mut self, other: Self) -> bool;
-    fn expiration(&self) -> &RumorExpiration;
+    fn expiration(&self) -> &Expiration;
     fn expire(&mut self);
 }
 
@@ -501,7 +501,7 @@ impl<T> RumorStore<T> where T: Rumor
             .values()
             .flat_map(HashMap::values)
             .cloned()
-            .partition(|rumor| rumor.expiration() < &RumorExpiration::new(expiration_date))
+            .partition(|rumor| rumor.expiration() < &Expiration::new(expiration_date))
     }
 
     pub fn expired_rumors(&self, expiration_date: DateTime<Utc>) -> Vec<T> {
@@ -614,8 +614,8 @@ mod tests {
     use crate::{error::Result,
                 protocol::{self,
                            newscast},
-                rumor::{Rumor,
-                        RumorExpiration,
+                rumor::{Expiration,
+                        Rumor,
                         RumorKey,
                         RumorType}};
 
@@ -623,14 +623,14 @@ mod tests {
     struct FakeRumor {
         pub id:         String,
         pub key:        String,
-        pub expiration: RumorExpiration,
+        pub expiration: Expiration,
     }
 
     impl Default for FakeRumor {
         fn default() -> FakeRumor {
             FakeRumor { id:         format!("{}", Uuid::new_v4().to_simple_ref()),
                         key:        String::from("fakerton"),
-                        expiration: RumorExpiration::default(), }
+                        expiration: Expiration::default(), }
         }
     }
 
@@ -638,7 +638,7 @@ mod tests {
     struct TrumpRumor {
         pub id:         String,
         pub key:        String,
-        pub expiration: RumorExpiration,
+        pub expiration: Expiration,
     }
 
     impl Rumor for FakeRumor {
@@ -650,7 +650,7 @@ mod tests {
 
         fn merge(&mut self, mut _other: FakeRumor) -> bool { false }
 
-        fn expiration(&self) -> &RumorExpiration { &self.expiration }
+        fn expiration(&self) -> &Expiration { &self.expiration }
 
         fn expire(&mut self) {}
     }
@@ -677,7 +677,7 @@ mod tests {
         fn default() -> TrumpRumor {
             TrumpRumor { id:         format!("{}", Uuid::new_v4().to_simple_ref()),
                          key:        String::from("fakerton"),
-                         expiration: RumorExpiration::default(), }
+                         expiration: Expiration::default(), }
         }
     }
 
@@ -690,7 +690,7 @@ mod tests {
 
         fn merge(&mut self, mut _other: TrumpRumor) -> bool { false }
 
-        fn expiration(&self) -> &RumorExpiration { &self.expiration }
+        fn expiration(&self) -> &Expiration { &self.expiration }
 
         fn expire(&mut self) {}
     }
