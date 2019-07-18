@@ -852,13 +852,19 @@ impl MemberList {
         self.read_entries().contains_key(member_id)
     }
 
-    pub fn rumor_keys(&self) -> Vec<RumorKey> {
+    /// # Locking
+    /// * `MemberList::entries` (read) This method must not be called while any MemberList::entries
+    ///   lock is held.
+    pub fn rumor_keys_mlr(&self) -> Vec<RumorKey> {
         self.read_entries()
             .values()
             .map(|member_list::Entry { member, .. }| RumorKey::from(member))
             .collect()
     }
 
+    /// # Locking
+    /// * `MemberList::entries` (write) This method must not be called while any MemberList::entries
+    ///   lock is held.
     pub fn purge_expired_mlw(&self, expiration_date: DateTime<Utc>) {
         self.write_entries()
             .retain(|_, v| !v.member.expired(expiration_date));

@@ -604,7 +604,7 @@ impl Server {
         keys.append(&mut self.election_store.rumor_keys());
         keys.append(&mut self.update_store.rumor_keys());
         keys.append(&mut self.departure_store.rumor_keys());
-        keys.append(&mut self.member_list.rumor_keys());
+        keys.append(&mut self.member_list.rumor_keys_mlr());
         keys
     }
 
