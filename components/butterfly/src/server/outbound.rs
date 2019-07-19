@@ -5,8 +5,7 @@
 use super::AckReceiver;
 use crate::{member::{Health,
                      Member},
-            rumor::{RumorKey,
-                    RumorType},
+            rumor::RumorKey,
             server::{timing::Timing,
                      Server},
             swim::{Ack,
@@ -301,12 +300,7 @@ pub fn populate_membership_rumors_mlr(server: &Server,
         }
     }
 
-    let rumors: Vec<RumorKey> = server
-        .keys_for_live_rumors()
-        .into_iter()
-        .filter(|ref r| r.kind == RumorType::Member)
-        .take(5) // TODO (CM): magic number!
-        .collect();
+    let rumors: Vec<RumorKey> = server.member_list.rumor_keys_mlr();
 
     for rkey in rumors.iter() {
         if let Some(member) = server.member_list.membership_for_mlr(&rkey.key()) {
