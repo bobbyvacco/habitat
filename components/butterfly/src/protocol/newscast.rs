@@ -34,7 +34,7 @@ impl From<CDeparture> for Rumor {
     fn from(value: CDeparture) -> Self {
         let exp = value.expiration.for_proto();
         let payload = Departure { member_id:  Some(value.member_id),
-                                  expiration: Some(exp), };
+                                  expiration: exp, };
         Rumor { r#type:  RumorType::Departure as i32,
                 tag:     Vec::default(),
                 from_id: Some("butterflyclient".to_string()),
@@ -51,7 +51,7 @@ impl From<CElection> for Rumor {
                                  suitability:   Some(value.suitability),
                                  status:        Some(value.status as i32),
                                  votes:         value.votes.clone(),
-                                 expiration:    Some(exp), };
+                                 expiration:    exp, };
         Rumor { r#type:  RumorType::Election as i32,
                 tag:     Vec::default(),
                 from_id: Some(value.member_id),
@@ -68,7 +68,7 @@ impl From<CElectionUpdate> for Rumor {
                                  suitability:   Some(value.suitability),
                                  status:        Some(value.status as i32),
                                  votes:         value.votes.clone(),
-                                 expiration:    Some(exp), };
+                                 expiration:    exp, };
         Rumor { r#type:  RumorType::ElectionUpdate as i32,
                 tag:     Vec::default(),
                 from_id: Some(value.member_id.clone()),
@@ -86,7 +86,7 @@ impl From<CService> for Rumor {
                                 pkg:           Some(value.pkg),
                                 cfg:           Some(value.cfg),
                                 sys:           Some(value.sys.into()),
-                                expiration:    Some(exp), };
+                                expiration:    exp, };
         Rumor { r#type:  RumorType::Service as i32,
                 tag:     Vec::default(),
                 from_id: Some(value.member_id),
@@ -101,7 +101,7 @@ impl From<CServiceConfig> for Rumor {
                                       incarnation:   Some(value.incarnation),
                                       encrypted:     Some(value.encrypted),
                                       config:        Some(value.config),
-                                      expiration:    Some(exp), };
+                                      expiration:    exp, };
         Rumor { r#type:  RumorType::ServiceConfig as i32,
                 tag:     Vec::default(),
                 from_id: Some(value.from_id),
@@ -117,7 +117,7 @@ impl From<CServiceFile> for Rumor {
                                     encrypted:     Some(value.encrypted),
                                     filename:      Some(value.filename),
                                     body:          Some(value.body),
-                                    expiration:    Some(exp), };
+                                    expiration:    exp, };
         Rumor { r#type:  RumorType::ServiceFile as i32,
                 tag:     Vec::default(),
                 from_id: Some(value.from_id),

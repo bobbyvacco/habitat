@@ -32,7 +32,7 @@ impl fmt::Display for Departure {
 impl Departure {
     pub fn new(member_id: &str) -> Self {
         Departure { member_id:  member_id.to_string(),
-                    expiration: Expiration::forever(), }
+                    expiration: Expiration::never(), }
     }
 }
 
@@ -58,7 +58,7 @@ impl From<Departure> for newscast::Departure {
     fn from(value: Departure) -> Self {
         let exp = value.expiration.for_proto();
         newscast::Departure { member_id:  Some(value.member_id),
-                              expiration: Some(exp), }
+                              expiration: exp, }
     }
 }
 

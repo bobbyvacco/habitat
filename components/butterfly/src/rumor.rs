@@ -59,33 +59,37 @@ lazy_static! {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Expiration(DateTime<Utc>);
+pub struct Expiration(Option<DateTime<Utc>>);
 
 impl fmt::Display for Expiration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0.to_rfc3339())
+        let d = match self.0 {
+            Some(e) => e.to_rfc3339(),
+            None => String::from("None"),
+        };
+
+        write!(f, "{}", d)
     }
 }
 
 impl Expiration {
-    // Some rumors we don't want to ever have naturally age out. We only want them
-    // to expire when there is a new rumor to take their place (e.g. a new election). When that
-    // type of trigger event happens, we will manually set the expiration date to a short time in
-    // the future. Until then, though, we don't want this rumor to go away on its own, so we set
-    // the expiration date to 100 years in the future, which is effectively forever for our
-    // purposes. This is far more convenient and natural to work with than having to deal with
-    // Option<DateTime<Utc>>.
-    pub fn forever() -> Self { Expiration(Utc::now() + Duration::weeks(5200)) }
-
     // This is more of a generic expiration date that we can apply whenever we have a rumor we
     // don't need to keep around any more.
-    pub fn soon() -> Self { Expiration(Self::soon_date()) }
+    pub fn soon() -> Self { Self(Some(Self::soon_date())) }
 
-    pub fn new(expiration: DateTime<Utc>) -> Self { Self(expiration) }
+    pub fn never() -> Self { Self(None) }
 
-    pub fn expire(&mut self) { self.0 = Self::soon_date() }
+    pub fn new(expiration: DateTime<Utc>) -> Self { Self(Some(expiration)) }
 
-    pub fn expired(&self, now: DateTime<Utc>) -> bool { now > self.0 }
+    pub fn expire(&mut self) { self.0 = Some(Self::soon_date()) }
+
+    pub fn expired(&self, now: DateTime<Utc>) -> bool {
+        if let Some(e) = self.0 {
+            now > e
+        } else {
+            false
+        }
+    }
 
     fn soon_date() -> DateTime<Utc> {
         habitat_core::env_config_duration!(ExpirationSeconds, HAB_RUMOR_EXPIRATION_SECS => from_secs, time::Duration::from_secs(60 * 60)); // 1 hour
@@ -93,15 +97,16 @@ impl Expiration {
         Utc::now() + Duration::from_std(exp_secs).expect("Rumor Expiration seconds")
     }
 
-    pub fn for_proto(&self) -> String { self.0.to_rfc3339() }
+    pub fn for_proto(&self) -> Option<String> { self.0.map(|e| e.to_rfc3339()) }
 
     pub fn from_proto(expiration: Option<String>) -> Result<Self> {
-        if expiration.is_none() {
-            return Ok(Expiration::forever());
+        match expiration {
+            Some(e) => {
+                let exp = DateTime::parse_from_rfc3339(&e)?;
+                Ok(Self(Some(exp.with_timezone(&Utc))))
+            }
+            None => Ok(Self(None)),
         }
-
-        let exp = DateTime::parse_from_rfc3339(&expiration.unwrap())?;
-        Ok(Expiration(exp.with_timezone(&Utc)))
     }
 }
 
@@ -471,7 +476,7 @@ impl<T> RumorStore<T> where T: Rumor
     fn increment_update_counter(&self) { self.update_counter.fetch_add(1, Ordering::Relaxed); }
 
     /// Find rumors in our rumor store that have expired.
-    fn partitioned_rumors(&self, expiration_date: DateTime<Utc>) -> (Vec<T>, Vec<T>) {
+    fn partitioned(&self, expiration_date: DateTime<Utc>) -> (Vec<T>, Vec<T>) {
         self.read_entries()
             .values()
             .flat_map(HashMap::values)
@@ -479,26 +484,23 @@ impl<T> RumorStore<T> where T: Rumor
             .partition(|rumor| rumor.expiration().expired(expiration_date))
     }
 
-    pub fn expired_rumors(&self, expiration_date: DateTime<Utc>) -> Vec<T> {
-        self.partitioned_rumors(expiration_date).0
+    pub fn expired(&self, expiration_date: DateTime<Utc>) -> Vec<T> {
+        self.partitioned(expiration_date).0
     }
 
-    pub fn live_rumors(&self, expiration_date: DateTime<Utc>) -> Vec<T> {
-        self.partitioned_rumors(expiration_date).1
+    pub fn live(&self, expiration_date: DateTime<Utc>) -> Vec<T> {
+        self.partitioned(expiration_date).1
     }
 
     /// Remove all rumors that have expired from our rumor store.
     pub fn purge_expired(&self, expiration_date: DateTime<Utc>) {
-        self.expired_rumors(expiration_date).iter().for_each(|r| {
-                                                       self.remove(r.key(), r.id());
-                                                   });
+        self.expired(expiration_date).iter().for_each(|r| {
+                                                self.remove(r.key(), r.id());
+                                            });
     }
 
-    pub fn rumor_keys(&self) -> Vec<RumorKey> {
-        self.live_rumors(Utc::now())
-            .iter()
-            .map(RumorKey::from)
-            .collect()
+    pub fn keys(&self) -> Vec<RumorKey> {
+        self.live(Utc::now()).iter().map(RumorKey::from).collect()
     }
 
     pub fn expire_all_for_key(&self, key: &str) {
@@ -605,7 +607,7 @@ mod tests {
         fn default() -> FakeRumor {
             FakeRumor { id:         format!("{}", Uuid::new_v4().to_simple_ref()),
                         key:        String::from("fakerton"),
-                        expiration: Expiration::default(), }
+                        expiration: Expiration::never(), }
         }
     }
 
@@ -652,7 +654,7 @@ mod tests {
         fn default() -> TrumpRumor {
             TrumpRumor { id:         format!("{}", Uuid::new_v4().to_simple_ref()),
                          key:        String::from("fakerton"),
-                         expiration: Expiration::default(), }
+                         expiration: Expiration::never(), }
         }
     }
 

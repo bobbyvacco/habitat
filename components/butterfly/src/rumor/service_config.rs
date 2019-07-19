@@ -69,7 +69,7 @@ impl ServiceConfig {
                         incarnation: 0,
                         encrypted: false,
                         config,
-                        expiration: Expiration::forever() }
+                        expiration: Expiration::never() }
     }
 
     pub fn encrypt(&mut self, user_pair: &BoxKeyPair, service_pair: &BoxKeyPair) -> Result<()> {
@@ -139,7 +139,7 @@ impl From<ServiceConfig> for newscast::ServiceConfig {
                                   incarnation:   Some(value.incarnation),
                                   encrypted:     Some(value.encrypted),
                                   config:        Some(value.config),
-                                  expiration:    Some(exp), }
+                                  expiration:    exp, }
     }
 }
 

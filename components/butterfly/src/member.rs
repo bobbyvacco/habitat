@@ -193,7 +193,7 @@ impl Default for Member {
                  gossip_port: 0,
                  persistent:  false,
                  departed:    false,
-                 expiration:  Expiration::forever(), }
+                 expiration:  Expiration::never(), }
     }
 }
 
@@ -219,7 +219,7 @@ impl From<Member> for proto::Member {
                         gossip_port: Some(value.gossip_port.into()),
                         persistent:  Some(value.persistent),
                         departed:    Some(value.departed),
-                        expiration:  Some(exp), }
+                        expiration:  exp, }
     }
 }
 

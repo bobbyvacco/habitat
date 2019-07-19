@@ -598,12 +598,12 @@ impl Server {
 
     /// Gather and return RumorKeys for all our rumors
     pub fn keys_for_live_rumors(&self) -> Vec<RumorKey> {
-        let mut keys = self.service_store.rumor_keys();
-        keys.append(&mut self.service_config_store.rumor_keys());
-        keys.append(&mut self.service_file_store.rumor_keys());
-        keys.append(&mut self.election_store.rumor_keys());
-        keys.append(&mut self.update_store.rumor_keys());
-        keys.append(&mut self.departure_store.rumor_keys());
+        let mut keys = self.service_store.keys();
+        keys.append(&mut self.service_config_store.keys());
+        keys.append(&mut self.service_file_store.keys());
+        keys.append(&mut self.election_store.keys());
+        keys.append(&mut self.update_store.keys());
+        keys.append(&mut self.departure_store.keys());
         keys.append(&mut self.member_list.rumor_keys_mlr());
         keys
     }
@@ -1295,7 +1295,7 @@ mod election_trigger {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rumor::RumorExpiration;
+    use crate::rumor::Expiration;
     use habitat_core::service::ServiceGroup;
     use std::str::FromStr;
 
@@ -1309,7 +1309,7 @@ mod tests {
                   pkg:           Default::default(),
                   cfg:           Default::default(),
                   sys:           Default::default(),
-                  expiration:    RumorExpiration::default(), }
+                  expiration:    Expiration::never(), }
     }
 
     #[test]

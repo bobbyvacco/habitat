@@ -75,7 +75,7 @@ impl ServiceFile {
                       encrypted: false,
                       filename: filename.into(),
                       body,
-                      expiration: Expiration::forever() }
+                      expiration: Expiration::never() }
     }
 
     /// Encrypt the contents of the service file
@@ -135,7 +135,7 @@ impl From<ServiceFile> for newscast::ServiceFile {
                                 encrypted:     Some(value.encrypted),
                                 filename:      Some(value.filename),
                                 body:          Some(value.body),
-                                expiration:    Some(exp), }
+                                expiration:    exp, }
     }
 }
 

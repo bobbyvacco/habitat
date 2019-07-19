@@ -78,7 +78,7 @@ impl Election {
                        ElectionStatus::NoQuorum
                    },
                    votes: vec![from_id],
-                   expiration: Expiration::forever() }
+                   expiration: Expiration::never() }
     }
 
     /// Insert a vote for the election.
@@ -161,7 +161,7 @@ impl From<Election> for newscast::Election {
                              suitability:   Some(value.suitability),
                              status:        Some(value.status as i32),
                              votes:         value.votes,
-                             expiration:    Some(exp), }
+                             expiration:    exp, }
     }
 }
 

@@ -110,7 +110,7 @@ impl Service {
                         .expect("Struct should serialize to bytes")
                           })
                           .unwrap_or_default(),
-                  expiration: Expiration::forever() }
+                  expiration: Expiration::never() }
     }
 }
 
@@ -152,7 +152,7 @@ impl From<Service> for newscast::Service {
                             pkg:           Some(value.pkg),
                             cfg:           Some(value.cfg),
                             sys:           Some(value.sys.into()),
-                            expiration:    Some(exp), }
+                            expiration:    exp, }
     }
 }
 
