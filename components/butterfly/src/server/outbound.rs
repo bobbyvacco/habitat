@@ -19,6 +19,7 @@ use prometheus::{HistogramTimer,
                  HistogramVec,
                  IntCounterVec,
                  IntGaugeVec};
+use rand::seq::SliceRandom;
 use std::{fmt,
           net::{SocketAddr,
                 UdpSocket},
@@ -300,7 +301,9 @@ pub fn populate_membership_rumors_mlr(server: &Server,
         }
     }
 
-    let rumors: Vec<RumorKey> = server.member_list.rumor_keys_mlr();
+    let mut rng = rand::thread_rng();
+    let rumor_keys = &server.member_list.rumor_keys_mlr();
+    let rumors: Vec<RumorKey> = rumor_keys.choose_multiple(&mut rng, 5).cloned().collect();
 
     for rkey in rumors.iter() {
         if let Some(member) = server.member_list.membership_for_mlr(&rkey.key()) {
