@@ -637,10 +637,16 @@ impl Server {
 
     /// Mark a service for deletion. This means butterfly will mark the Service, ServiceConfig and
     /// ServiceFile rumors related to this service as expired. They will eventually be purged.
+    ///
+    /// In addition, Election and ElectionUpdate rumors for this service group are also expired.
+    /// Without the Service* rumors, there's no service group to speak of, so there's no point
+    /// holding onto Election* rumors either.
     pub fn mark_service_for_deletion(&self, service: &Service) {
         self.service_store.expire_all_for_key(service.key());
         self.service_config_store.expire_all_for_key(service.key());
         self.service_file_store.expire_all_for_key(service.key());
+        self.election_store.expire_all_for_key(service.key());
+        self.update_store.expire_all_for_key(service.key());
     }
 
     /// Insert a service rumor into the service store.
