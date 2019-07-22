@@ -11,7 +11,8 @@ use crate::{error::{Error,
             rumor::{Expiration,
                     Rumor,
                     RumorPayload,
-                    RumorType}};
+                    RumorType,
+                    Transient}};
 use habitat_core::{crypto::{keys::box_key_pair::WrappedSealedBox,
                             BoxKeyPair},
                    service::ServiceGroup};
@@ -156,7 +157,9 @@ impl Rumor for ServiceFile {
     fn id(&self) -> &str { &self.filename }
 
     fn key(&self) -> &str { &self.service_group }
+}
 
+impl Transient for ServiceFile {
     fn expiration(&self) -> &Expiration { &self.expiration }
 
     fn expire(&mut self) {

@@ -19,7 +19,8 @@ use crate::{error::{Error,
             rumor::{Expiration,
                     Rumor,
                     RumorPayload,
-                    RumorType}};
+                    RumorType,
+                    Transient}};
 use std::{fmt,
           ops::{Deref,
                 DerefMut}};
@@ -213,12 +214,12 @@ impl Rumor for Election {
     fn id(&self) -> &str { "election" }
 
     fn key(&self) -> &str { &self.service_group }
+}
 
+impl Transient for Election {
     fn expiration(&self) -> &Expiration { &self.expiration }
 
-    // This implementation is left empty on purpose. We never want to expire Elections. There can
-    // only ever be 1 Election rumor per service group, by design, so expiration isn't necessary.
-    fn expire(&mut self) {}
+    fn expire(&mut self) { self.expiration.expire(); }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -295,7 +296,9 @@ impl Rumor for ElectionUpdate {
     fn id(&self) -> &str { "election" }
 
     fn key(&self) -> &str { self.0.key() }
+}
 
+impl Transient for ElectionUpdate {
     fn expiration(&self) -> &Expiration { &self.0.expiration }
 
     fn expire(&mut self) { self.0.expire() }

@@ -168,12 +168,15 @@ pub trait Rumor: Message<ProtoRumor> + Sized + Debug {
     fn key(&self) -> &str;
     fn id(&self) -> &str;
     fn merge(&mut self, other: Self) -> bool;
-    fn expiration(&self) -> &Expiration;
-    fn expire(&mut self);
 }
 
 impl<'a, T: Rumor> From<&'a T> for RumorKey {
     fn from(rumor: &'a T) -> RumorKey { RumorKey::new(rumor.kind(), rumor.id(), rumor.key()) }
+}
+
+pub trait Transient: Rumor {
+    fn expiration(&self) -> &Expiration;
+    fn expire(&mut self);
 }
 
 /// Storage for Rumors. It takes a rumor and stores it according to the member that produced it,
@@ -475,6 +478,17 @@ impl<T> RumorStore<T> where T: Rumor
     /// it will be.
     fn increment_update_counter(&self) { self.update_counter.fetch_add(1, Ordering::Relaxed); }
 
+    pub fn keys(&self) -> Vec<RumorKey> {
+        self.read_entries()
+            .values()
+            .flat_map(HashMap::values)
+            .map(RumorKey::from)
+            .collect()
+    }
+}
+
+impl<T> RumorStore<T> where T: Transient
+{
     /// Find rumors in our rumor store that have expired.
     fn partitioned(&self, expiration_date: DateTime<Utc>) -> (Vec<T>, Vec<T>) {
         self.read_entries()
@@ -499,13 +513,13 @@ impl<T> RumorStore<T> where T: Rumor
                                             });
     }
 
-    pub fn keys(&self) -> Vec<RumorKey> {
+    pub fn live_keys(&self) -> Vec<RumorKey> {
         self.live(Utc::now()).iter().map(RumorKey::from).collect()
     }
 
     pub fn expire_all_for_key(&self, key: &str) {
         if let Some(m) = self.write_entries().get_mut(key) {
-            m.values_mut().for_each(Rumor::expire);
+            m.values_mut().for_each(Transient::expire);
         }
     }
 }
@@ -626,10 +640,6 @@ mod tests {
         fn id(&self) -> &str { &self.id }
 
         fn merge(&mut self, mut _other: FakeRumor) -> bool { false }
-
-        fn expiration(&self) -> &Expiration { &self.expiration }
-
-        fn expire(&mut self) {}
     }
 
     impl protocol::FromProto<newscast::Rumor> for FakeRumor {
@@ -666,10 +676,6 @@ mod tests {
         fn id(&self) -> &str { &self.id }
 
         fn merge(&mut self, mut _other: TrumpRumor) -> bool { false }
-
-        fn expiration(&self) -> &Expiration { &self.expiration }
-
-        fn expire(&mut self) {}
     }
 
     impl protocol::FromProto<newscast::Rumor> for TrumpRumor {

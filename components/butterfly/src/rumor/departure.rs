@@ -70,14 +70,6 @@ impl Rumor for Departure {
     fn id(&self) -> &str { &self.member_id }
 
     fn key(&self) -> &str { "departure" }
-
-    fn expiration(&self) -> &Expiration { &self.expiration }
-
-    // This implementation is left empty on purpose. We never want to expire Departure rumors. If
-    // we did, then the mechanism provided by 'hab sup depart' for permanently banning a supervisor
-    // from the network would fail. These should likely be a small part of our overall rumor
-    // storage anyway.
-    fn expire(&mut self) {}
 }
 
 impl PartialOrd for Departure {

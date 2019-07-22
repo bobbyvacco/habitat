@@ -29,7 +29,6 @@ fn run_loop(server: &Server, timing: &Timing) -> ! {
               .members_expired_to_departed_mlw(timing.departure_timeout_duration());
 
         let now = Utc::now();
-        server.departure_store.purge_expired(now);
         server.election_store.purge_expired(now);
         server.update_store.purge_expired(now);
         server.service_store.purge_expired(now);

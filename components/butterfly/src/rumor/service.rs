@@ -10,7 +10,8 @@ use crate::{error::{Error,
             rumor::{Expiration,
                     Rumor,
                     RumorPayload,
-                    RumorType}};
+                    RumorType,
+                    Transient}};
 use habitat_core::{package::Identifiable,
                    service::ServiceGroup};
 use serde::{ser::SerializeStruct,
@@ -173,7 +174,9 @@ impl Rumor for Service {
     fn id(&self) -> &str { &self.member_id }
 
     fn key(&self) -> &str { self.service_group.as_ref() }
+}
 
+impl Transient for Service {
     fn expiration(&self) -> &Expiration { &self.expiration }
 
     fn expire(&mut self) {
