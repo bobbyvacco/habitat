@@ -38,6 +38,8 @@ use crate::{error::{Error,
             swim::Ack,
             trace::{Trace,
                     TraceKind}};
+use chrono::{offset::Utc,
+             DateTime};
 use habitat_common::{liveliness_checker,
                      FeatureFlag};
 use habitat_core::crypto::SymKey;
@@ -594,6 +596,16 @@ impl Server {
         } else {
             debug!("No socket present; server was never started, so nothing to depart");
         }
+    }
+
+    /// Purge any expired rumors from any of our rumor stores, including Members
+    pub fn purge_expired(&mut self, expiration_date: DateTime<Utc>) {
+        self.election_store.purge_expired(expiration_date);
+        self.update_store.purge_expired(expiration_date);
+        self.service_store.purge_expired(expiration_date);
+        self.service_config_store.purge_expired(expiration_date);
+        self.service_file_store.purge_expired(expiration_date);
+        self.member_list.purge_expired_mlw(expiration_date);
     }
 
     /// Gather and return RumorKeys for all our rumors

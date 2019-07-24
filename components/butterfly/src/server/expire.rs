@@ -9,13 +9,13 @@ use habitat_common::liveliness_checker;
 use std::{thread,
           time::Duration};
 
-pub fn spawn_thread(name: String, server: Server, timing: Timing) -> std::io::Result<()> {
+pub fn spawn_thread(name: String, mut server: Server, timing: Timing) -> std::io::Result<()> {
     thread::Builder::new().name(name)
-                          .spawn(move || -> ! { run_loop(&server, &timing) })
+                          .spawn(move || -> ! { run_loop(&mut server, &timing) })
                           .map(|_| ())
 }
 
-fn run_loop(server: &Server, timing: &Timing) -> ! {
+fn run_loop(server: &mut Server, timing: &Timing) -> ! {
     habitat_core::env_config_duration!(ExpireThreadSleepMillis, HAB_EXPIRE_THREAD_SLEEP_MS => from_millis, Duration::from_millis(500));
     let sleep_ms: Duration = ExpireThreadSleepMillis::configured_value().into();
 
@@ -39,12 +39,7 @@ fn run_loop(server: &Server, timing: &Timing) -> ! {
         // let's only do it every once in awhile.
         if purge_counter >= purge_secs {
             let now = Utc::now();
-            server.election_store.purge_expired(now);
-            server.update_store.purge_expired(now);
-            server.service_store.purge_expired(now);
-            server.service_config_store.purge_expired(now);
-            server.service_file_store.purge_expired(now);
-            server.member_list.purge_expired_mlw(now);
+            server.purge_expired(now);
             purge_counter = Duration::from_secs(0);
         }
 
