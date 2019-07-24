@@ -19,6 +19,11 @@ fn run_loop(server: &Server, timing: &Timing) -> ! {
     habitat_core::env_config_duration!(ExpireThreadSleepMillis, HAB_EXPIRE_THREAD_SLEEP_MS => from_millis, Duration::from_millis(500));
     let sleep_ms: Duration = ExpireThreadSleepMillis::configured_value().into();
 
+    habitat_core::env_config_duration!(ExpireThreadPurgeSecs, HAB_EXPIRE_THREAD_PURGE_SECS => from_secs, Duration::from_secs(60));
+    let purge_secs: Duration = ExpireThreadPurgeSecs::configured_value().into();
+
+    let mut purge_counter = Duration::from_secs(0);
+
     loop {
         liveliness_checker::mark_thread_alive().and_divergent();
 
@@ -28,13 +33,20 @@ fn run_loop(server: &Server, timing: &Timing) -> ! {
         server.member_list
               .members_expired_to_departed_mlw(timing.departure_timeout_duration());
 
-        let now = Utc::now();
-        server.election_store.purge_expired(now);
-        server.update_store.purge_expired(now);
-        server.service_store.purge_expired(now);
-        server.service_config_store.purge_expired(now);
-        server.service_file_store.purge_expired(now);
-        server.member_list.purge_expired_mlw(now);
+        purge_counter += sleep_ms;
+
+        // Rather than trying to do this potentially expensive operation every loop iteration,
+        // let's only do it every once in awhile.
+        if purge_counter >= purge_secs {
+            let now = Utc::now();
+            server.election_store.purge_expired(now);
+            server.update_store.purge_expired(now);
+            server.service_store.purge_expired(now);
+            server.service_config_store.purge_expired(now);
+            server.service_file_store.purge_expired(now);
+            server.member_list.purge_expired_mlw(now);
+            purge_counter = Duration::from_secs(0);
+        }
 
         thread::sleep(sleep_ms);
     }
