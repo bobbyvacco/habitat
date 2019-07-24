@@ -500,13 +500,11 @@ impl<T> RumorStore<T> where T: Transient
             .partition(|rumor| rumor.expiration().expired(expiration_date))
     }
 
-    pub fn expired(&self, expiration_date: DateTime<Utc>) -> Vec<T> {
+    fn expired(&self, expiration_date: DateTime<Utc>) -> Vec<T> {
         self.partitioned(expiration_date).0
     }
 
-    pub fn live(&self, expiration_date: DateTime<Utc>) -> Vec<T> {
-        self.partitioned(expiration_date).1
-    }
+    fn live(&self, expiration_date: DateTime<Utc>) -> Vec<T> { self.partitioned(expiration_date).1 }
 
     /// Remove all rumors that have expired from our rumor store.
     pub fn purge_expired(&self, expiration_date: DateTime<Utc>) {
