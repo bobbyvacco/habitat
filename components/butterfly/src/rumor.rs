@@ -490,7 +490,9 @@ impl<T> RumorStore<T> where T: Rumor
 impl<T> RumorStore<T> where T: Transient
 {
     /// Find rumors in our rumor store that have expired.
-    fn partitioned(&self, expiration_date: DateTime<Utc>) -> (Vec<T>, Vec<T>) {
+    fn partitioned<B>(&self, expiration_date: DateTime<Utc>) -> (B, B)
+        where B: Default + Extend<T>
+    {
         self.read_entries()
             .values()
             .flat_map(HashMap::values)
