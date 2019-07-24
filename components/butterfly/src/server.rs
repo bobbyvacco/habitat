@@ -597,7 +597,7 @@ impl Server {
     }
 
     /// Gather and return RumorKeys for all our rumors
-    pub fn keys_for_live_rumors(&self) -> Vec<RumorKey> {
+    pub fn rumor_keys(&self) -> Vec<RumorKey> {
         let mut keys = self.service_store.keys();
         keys.append(&mut self.service_config_store.live_keys());
         keys.append(&mut self.service_file_store.live_keys());

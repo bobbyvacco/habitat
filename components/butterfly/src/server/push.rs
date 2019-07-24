@@ -81,7 +81,7 @@ fn run_loop(server: &Server, timing: &Timing) -> ! {
                 if server.member_list.pingable_mlr(&member)
                    && !server.member_list.persistent_and_confirmed_mlr(&member)
                 {
-                    let rumors = server.keys_for_live_rumors();
+                    let rumors = server.rumor_keys();
                     if !rumors.is_empty() {
                         let sc = server.clone();
                         let guard = match thread::Builder::new().name(String::from("push-worker"))
