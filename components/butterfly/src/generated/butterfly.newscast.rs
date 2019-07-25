@@ -101,8 +101,6 @@ pub struct SysInfo {
 pub struct Departure {
     #[prost(string, optional, tag="1")]
     pub member_id: ::std::option::Option<std::string::String>,
-    #[prost(string, optional, tag="2")]
-    pub expiration: ::std::option::Option<std::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 #[derive(Serialize, Deserialize)]

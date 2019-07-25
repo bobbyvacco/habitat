@@ -10,8 +10,7 @@ use crate::{error::{Error,
                        newscast::{self,
                                   Rumor as ProtoRumor},
                        FromProto},
-            rumor::{Expiration,
-                    Rumor,
+            rumor::{Rumor,
                     RumorPayload,
                     RumorType}};
 use std::{cmp::Ordering,
@@ -19,21 +18,17 @@ use std::{cmp::Ordering,
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Departure {
-    pub member_id:  String,
-    pub expiration: Expiration,
+    pub member_id: String,
 }
 
 impl fmt::Display for Departure {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Departure m/{} e/{}", self.member_id, self.expiration)
+        write!(f, "Departure m/{}", self.member_id)
     }
 }
 
 impl Departure {
-    pub fn new(member_id: &str) -> Self {
-        Departure { member_id:  member_id.to_string(),
-                    expiration: Expiration::never(), }
-    }
+    pub fn new(member_id: &str) -> Self { Departure { member_id: member_id.to_string(), } }
 }
 
 impl protocol::Message<ProtoRumor> for Departure {
@@ -47,19 +42,13 @@ impl FromProto<ProtoRumor> for Departure {
             _ => panic!("from-bytes departure"),
         };
 
-        let expiration = Expiration::from_proto(payload.expiration)?;
         Ok(Departure { member_id: payload.member_id
-                                         .ok_or(Error::ProtocolMismatch("member-id"))?,
-                       expiration })
+                                         .ok_or(Error::ProtocolMismatch("member-id"))?, })
     }
 }
 
 impl From<Departure> for newscast::Departure {
-    fn from(value: Departure) -> Self {
-        let exp = value.expiration.for_proto();
-        newscast::Departure { member_id:  Some(value.member_id),
-                              expiration: exp, }
-    }
+    fn from(value: Departure) -> Self { newscast::Departure { member_id: Some(value.member_id), } }
 }
 
 impl Rumor for Departure {

@@ -32,9 +32,7 @@ impl fmt::Display for RumorType {
 
 impl From<CDeparture> for Rumor {
     fn from(value: CDeparture) -> Self {
-        let exp = value.expiration.for_proto();
-        let payload = Departure { member_id:  Some(value.member_id),
-                                  expiration: exp, };
+        let payload = Departure { member_id: Some(value.member_id), };
         Rumor { r#type:  RumorType::Departure as i32,
                 tag:     Vec::default(),
                 from_id: Some("butterflyclient".to_string()),
