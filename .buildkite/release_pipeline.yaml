@@ -100,7 +100,6 @@ steps:
       - chef/anka#v0.5.2:
           vm-name: macos-base-10.12
           inherit-environment-vars: true
-          wait-network: true
 
   - wait
 
