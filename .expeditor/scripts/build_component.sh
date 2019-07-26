@@ -1,8 +1,12 @@
 #!/bin/bash
 
-set -euo pipefail
+# set -euo pipefail
 
 source .expeditor/scripts/shared.sh
+
+echo "THING: $VAULT_ADDR"
+echo "\n $(env) \n"
+exit 1
 
 export HAB_AUTH_TOKEN="${ACCEPTANCE_HAB_AUTH_TOKEN}"
 export HAB_BLDR_URL="${ACCEPTANCE_HAB_BLDR_URL}"
