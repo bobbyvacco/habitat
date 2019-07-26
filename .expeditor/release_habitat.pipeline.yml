@@ -56,7 +56,6 @@ steps:
     expeditor:
       executor:
         macos:
-          os-version: 10.12
 
   - wait
 
