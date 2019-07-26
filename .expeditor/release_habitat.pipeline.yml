@@ -55,6 +55,8 @@ steps:
       - .expeditor/scripts/build_component.sh hab
     agents:
       queue: default-macos-privileged
+    env:
+      ACCEPTANCE_HAB_BLDR_URL: "https://bldr.acceptance.habitat.sh"
     plugins:
       - chef/anka#v0.5.2:
           vm-name: macos-base-10.12
