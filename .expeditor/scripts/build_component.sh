@@ -4,6 +4,8 @@
 
 source .expeditor/scripts/shared.sh
 
+echo "WHY\n $(env) WHY\n"
+
 export HAB_AUTH_TOKEN="${ACCEPTANCE_HAB_AUTH_TOKEN}"
 export HAB_BLDR_URL="${ACCEPTANCE_HAB_BLDR_URL}"
 
