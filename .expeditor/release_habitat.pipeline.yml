@@ -50,12 +50,16 @@ steps:
             - BUILD_PKG_TARGET=x86_64-windows
             - BUILDKITE_AGENT_ACCESS_TOKEN
 
-  - label: "[:macos: build hab]"
-    command:
+  - label: ":mac: :habicat: core/hab"
+    command: 
       - .expeditor/scripts/build_component.sh hab
-    expeditor:
-      executor:
-        macos:
+    agents:
+      queue: default-macos-privileged
+    plugins:
+      - chef/anka#v0.5.2:
+          vm-name: macos-base-10.12
+          inherit-environment-vars: true
+          wait-network: true
 
   - wait
 
