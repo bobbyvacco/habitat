@@ -4,10 +4,6 @@
 
 source .expeditor/scripts/shared.sh
 
-echo "THING: $SCOTTHAIN_HAB_AUTH_TOKEN"
-echo "\n $(env) \n"
-exit 1
-
 export HAB_AUTH_TOKEN="${ACCEPTANCE_HAB_AUTH_TOKEN}"
 export HAB_BLDR_URL="${ACCEPTANCE_HAB_BLDR_URL}"
 
