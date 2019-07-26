@@ -57,6 +57,7 @@ steps:
       executor:
         macos:
           os-version: "10.12"
+          inherit-environment-vars: true
           debug: true
           anka-debug: true
 
