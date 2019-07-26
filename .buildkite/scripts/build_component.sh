@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+# set -euo pipefail
 
 source .buildkite/scripts/shared.sh
 
@@ -18,7 +18,7 @@ channel=$(get_release_channel)
 
 echo "THING: $VAULT_ADDR"
 echo "\n $(env) \n"
-
+exit 1
 # `set_hab_binary` currently _must_ be called first!
 set_hab_binary
 import_keys
