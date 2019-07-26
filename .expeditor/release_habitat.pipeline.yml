@@ -57,6 +57,8 @@ steps:
       executor:
         macos:
           os-version: "10.12"
+          debug: true
+          anka-debug: true
 
   - wait
 
