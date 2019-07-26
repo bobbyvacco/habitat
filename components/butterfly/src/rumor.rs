@@ -75,11 +75,9 @@ impl fmt::Display for Expiration {
 impl Expiration {
     // This is more of a generic expiration date that we can apply whenever we have a rumor we
     // don't need to keep around any more.
-    pub fn soon() -> Self { Self(Some(Self::soon_date())) }
+    pub(crate) fn soon() -> Self { Self(Some(Self::soon_date())) }
 
-    pub fn never() -> Self { Self(None) }
-
-    pub fn new(expiration: DateTime<Utc>) -> Self { Self(Some(expiration)) }
+    pub(crate) fn never() -> Self { Self(None) }
 
     pub fn expire(&mut self) { self.0 = Some(Self::soon_date()) }
 
@@ -97,9 +95,9 @@ impl Expiration {
         Utc::now() + Duration::from_std(exp_secs).expect("Rumor Expiration seconds")
     }
 
-    pub fn for_proto(&self) -> Option<String> { self.0.map(|e| e.to_rfc3339()) }
+    pub(crate) fn for_proto(&self) -> Option<String> { self.0.map(|e| e.to_rfc3339()) }
 
-    pub fn from_proto(expiration: Option<String>) -> Result<Self> {
+    pub(crate) fn from_proto(expiration: Option<String>) -> Result<Self> {
         match expiration {
             Some(e) => {
                 let exp = DateTime::parse_from_rfc3339(&e)?;
