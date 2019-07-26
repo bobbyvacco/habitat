@@ -4,7 +4,7 @@
 
 source .expeditor/scripts/shared.sh
 
-echo "THING: $VAULT_ADDR"
+# echo "THING: $VAULT_ADDR"
 echo "\n $(env) \n"
 exit 1
 
