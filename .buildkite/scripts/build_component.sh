@@ -16,6 +16,9 @@ component=${1}
 
 channel=$(get_release_channel)
 
+echo "THING: $VAULT_ADDR"
+echo "\n $(env) \n"
+
 # `set_hab_binary` currently _must_ be called first!
 set_hab_binary
 import_keys
