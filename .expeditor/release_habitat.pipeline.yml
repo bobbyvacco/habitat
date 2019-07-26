@@ -62,6 +62,7 @@ steps:
           vm-name: macos-base-10.12
           inherit-environment-vars: true
           wait-network: true
+          anka-debug: true
 
   - wait
 
