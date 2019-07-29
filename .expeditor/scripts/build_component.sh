@@ -4,6 +4,8 @@
 
 source .expeditor/scripts/shared.sh
 
+ls -la /
+
 echo "WHY\n $(env) WHY\n"
 
 export HAB_AUTH_TOKEN="${ACCEPTANCE_HAB_AUTH_TOKEN}"
