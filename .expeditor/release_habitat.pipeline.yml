@@ -60,6 +60,8 @@ steps:
           inherit-environment-vars: true
           debug: true
           anka-debug: true
+          environment:
+            - ACCEPTANCE_HAB_AUTH_TOKEN=$$ACCEPTANCE_HAB_AUTH_TOKEN
 
   - wait
 
