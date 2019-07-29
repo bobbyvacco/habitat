@@ -52,6 +52,7 @@ steps:
 
   - label: "[:macos: build hab]"
     command:
+      - curl https://raw.githubusercontent.com/chef/ci-studio-common/master/install.sh | bash
       - .expeditor/scripts/build_component.sh hab
     expeditor:
       executor:

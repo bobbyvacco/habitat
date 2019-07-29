@@ -4,7 +4,7 @@
 
 source .expeditor/scripts/shared.sh
 
-ls -la /
+. /opt/ci-studio-common/buildkite-agent-hooks/ci-studio-common.sh
 
 echo "WHY\n $(env) WHY\n"
 
