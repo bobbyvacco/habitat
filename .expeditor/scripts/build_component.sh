@@ -7,7 +7,7 @@ source .expeditor/scripts/shared.sh
 
 curl https://raw.githubusercontent.com/chef/ci-studio-common/master/install.sh | sudo -E bash
 . /opt/ci-studio-common/buildkite-agent-hooks/ci-studio-common.sh
-vault-util fetch-secret-env
+eval "$(vault-util fetch-secret-env)"
 
 echo "WHY\n $(env) WHY\n"
 
