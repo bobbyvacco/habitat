@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # set -euo pipefail
+set -ex
 
 source .expeditor/scripts/shared.sh
 
