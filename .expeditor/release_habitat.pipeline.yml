@@ -55,13 +55,14 @@ steps:
       - curl https://raw.githubusercontent.com/chef/ci-studio-common/master/install.sh | sudo -E bash
       - . /opt/ci-studio-common/buildkite-agent-hooks/ci-studio-common.sh
       - eval "$(vault-util fetch-secret-env)" && .expeditor/scripts/build_component.sh hab
+    env:
+      BUILD_PKG_TARGET: "x86_64-darwin"
     expeditor:
       executor:
         macos:
           os-version: "10.12"
           inherit-environment-vars: true
-          environment:
-            - BUILD_PKG_TARGET=x86_64-darwin
+
 
   - wait
 
