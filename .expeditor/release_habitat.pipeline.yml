@@ -52,16 +52,15 @@ steps:
 
   - label: "[:macos: build hab]"
     command:
-      # - curl https://raw.githubusercontent.com/chef/ci-studio-common/master/install.sh | sudo -E bash
-      # - . /opt/ci-studio-common/buildkite-agent-hooks/ci-studio-common.sh
+      - curl https://raw.githubusercontent.com/chef/ci-studio-common/master/install.sh | sudo -E bash
+      - . /opt/ci-studio-common/buildkite-agent-hooks/ci-studio-common.sh
+      - eval "$(vault-util fetch-secret-env)"
       - .expeditor/scripts/build_component.sh hab
     expeditor:
       executor:
         macos:
           os-version: "10.12"
           inherit-environment-vars: true
-          debug: true
-          anka-debug: true
 
   - wait
 
