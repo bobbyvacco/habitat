@@ -60,6 +60,8 @@ steps:
         macos:
           os-version: "10.12"
           inherit-environment-vars: true
+          environment:
+            - BUILD_PKG_TARGET=x86_64-darwin
 
   - wait
 
