@@ -56,7 +56,7 @@ steps:
       - . /opt/ci-studio-common/buildkite-agent-hooks/ci-studio-common.sh
       - curl --remote-name --location "https://s3-us-west-2.amazonaws.com/shain-bk-test/mac-bootstrapper-1.0.0-latest.pkg"
       - sudo installer -verbose -pkg "mac-bootstrapper-1.0.0-latest.pkg" -target /
-      - ln -sf /opt/mac-bootstrapper/embedded/bin/bash /bin/bash
+      - sudo ln -sf /opt/mac-bootstrapper/embedded/bin/bash /bin/bash
       - eval "$(vault-util fetch-secret-env)" && .expeditor/scripts/build_component.sh hab
     env:
       BUILD_PKG_TARGET: "x86_64-darwin"
