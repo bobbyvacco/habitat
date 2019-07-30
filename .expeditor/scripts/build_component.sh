@@ -4,10 +4,6 @@ set -euo pipefail
 
 source .expeditor/scripts/shared.sh
 
-# curl https://raw.githubusercontent.com/chef/ci-studio-common/master/install.sh | sudo -E bash
-# . /opt/ci-studio-common/buildkite-agent-hooks/ci-studio-common.sh
-# eval "$(vault-util fetch-secret-env)"
-
 export HAB_AUTH_TOKEN="${ACCEPTANCE_HAB_AUTH_TOKEN}"
 export HAB_BLDR_URL="${ACCEPTANCE_HAB_BLDR_URL}"
 
