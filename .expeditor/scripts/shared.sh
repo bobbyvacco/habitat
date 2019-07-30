@@ -25,7 +25,7 @@ get_latest_pkg_version_in_channel() {
     echo "${version}"
 }
 
-# Always install the latest hab binary appropriate for your linux platform
+# Always install the latest hab binary appropriate for your linux/darwin platform
 #
 # Accepts a pkg target argument if you need to override it, otherwise
 # will default to the value of `BUILD_PKG_TARGET`
@@ -37,6 +37,21 @@ install_latest_hab_binary() {
     # are the same. let's just delete it
     rm -rf /hab/pkgs/core/hab/0.82.0
     curl https://raw.githubusercontent.com/habitat-sh/habitat/master/components/hab/install.sh | sudo bash -s -- -t "$pkg_target"
+    case "${pkg_target}" in
+        x86_64-linux)
+            hab_binary="/bin/hab"
+            ;;
+        x86_64-linux-kernel2)
+            hab_binary="/bin/hab"
+            ;;
+        x86_64-darwin)
+            hab_binary="/usr/local/bin/hab"
+            ;;
+        *)
+            echo "--- :no_entry_sign: Unknown PackageTarget: ${pkg_target}"
+            exit 1
+            ;;
+    esac
     hab_binary="/bin/hab"
     # TODO: workaround for https://github.com/habitat-sh/habitat/issues/6771
     ${hab_binary} pkg install core/hab-studio
